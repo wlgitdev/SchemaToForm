@@ -1,3 +1,4 @@
+import { DependencyHandler } from "./DependencyHandler";
 import { UISchema, UIFieldDefinition } from "./types";
 
 export type FieldValue =
@@ -34,10 +35,6 @@ export interface FieldValidator {
   (value: FieldValue, values: FormData): Promise<FieldError>;
 }
 
-interface ReferenceData {
-  [key: string]: Array<{ value: string; label: string }>;
-}
-
 export class FormStore {
   private state: FormState;
   private schema: UISchema;
@@ -56,7 +53,8 @@ export class FormStore {
   private referenceLoader?: (
     modelName: string
   ) => Promise<Array<{ _id: string; name: string }>>;
-
+  private dependencyHandler: DependencyHandler;
+  
   constructor(
     schema: UISchema,
     initialValues: FormData = {},
@@ -94,6 +92,8 @@ export class FormStore {
     if (referenceLoader) {
       this.loadReferences();
     }
+
+    this.dependencyHandler = new DependencyHandler(schema.fields);
   }
 
   // Public API
@@ -141,6 +141,32 @@ export class FormStore {
       ...this.state.values,
       [field]: value,
     };
+    // Evaluate dependencies and apply effects
+    const effects = this.dependencyHandler.evaluateDependencies(
+      field,
+      newValues
+    );
+    
+    effects.forEach((effect, targetField) => {
+      if (effect.setValue !== undefined) {
+        newValues[targetField] = effect.setValue;
+      }
+      if (effect.clearValue) {
+        newValues[targetField] = null;
+      }
+      if (effect.hide !== undefined) {
+        this.schema.fields[targetField].hidden = effect.hide;
+      }
+      if (effect.disable !== undefined) {
+        this.schema.fields[targetField].readOnly = effect.disable;
+      }
+      if (effect.setValidation) {
+        this.schema.fields[targetField].validation = {
+          ...this.schema.fields[targetField].validation,
+          ...effect.setValidation,
+        };
+      }
+    });
 
     const newTouched = {
       ...this.state.touched,
