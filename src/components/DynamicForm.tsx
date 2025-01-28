@@ -8,6 +8,7 @@ import {
   CheckboxField,
   MultiSelectField
 } from './FormFields';
+import { FormSection, GridContainer } from './FormLayout';
 
 interface DynamicFormProps {
   schema: UISchema;
@@ -96,7 +97,7 @@ const FormFields: React.FC<{
       if (!field) return null;
 
       return (
-        <div key={fieldName} className="mb-4">
+        <div key={fieldName} className="w-full">
           <FieldRenderer name={fieldName} field={field} disabled={disabled} />
         </div>
       );
@@ -108,23 +109,26 @@ const FormFields: React.FC<{
     return (
       <>
         {schema.layout.groups.map((group, index) => (
-          <fieldset key={group.name || index} className="mb-8">
-            {group.label && (
-              <legend className="text-lg font-medium text-gray-900 mb-4">
-                {group.label}
-              </legend>
-            )}
-            <div className={group.collapsible ? 'collapsible-group' : ''}>
+          <FormSection
+            key={group.name || index}
+            title={group.label}
+            collapsible={group.collapsible}
+            defaultOpen={true}
+            columns={2} // Default to 2 columns for groups
+          >
               {renderFields(group.fields)}
-            </div>
-          </fieldset>
+          </FormSection>
         ))}
       </>
     );
   }
 
-  // If no groups are defined, render all fields in order
-  return <>{renderFields(Object.keys(schema.fields))}</>;
+  // If no groups are defined, use a single responsive grid
+  return (
+    <GridContainer columns={2}>
+      {renderFields(Object.keys(schema.fields))}
+    </GridContainer>
+  );
 };
 
 export const DynamicForm: React.FC<DynamicFormProps> = ({
