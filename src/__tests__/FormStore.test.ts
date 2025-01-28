@@ -1,45 +1,50 @@
-import { FormData, FieldValue, FormErrors, FormStore } from '../FormStore';
-import { UISchema } from '../types';
+/**
+ * @jest-environment jsdom
+ */
 
-describe('FormStore', () => {
+import { FormData, FormErrors, FormStore } from "../FormStore";
+import { waitFor } from "@testing-library/react";
+import { UISchema } from "../types";
+
+describe("FormStore", () => {
   let store: FormStore;
 
   const testSchema: UISchema = {
     fields: {
       name: {
-        type: 'text',
-        label: 'Name',
+        type: "text",
+        label: "Name",
         validation: {
           required: true,
-          minLength: 2
-        }
+          minLength: 2,
+        },
       },
       age: {
-        type: 'number',
-        label: 'Age',
+        type: "number",
+        label: "Age",
         validation: {
           min: 0,
-          max: 120
-        }
+          max: 120,
+        },
       },
       email: {
-        type: 'text',
-        label: 'Email',
+        type: "text",
+        label: "Email",
         validation: {
-          pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$',
-          patternMessage: 'Invalid email format'
-        }
+          pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+          patternMessage: "Invalid email format",
+        },
       },
       skills: {
-        type: 'multiselect',
-        label: 'Skills',
+        type: "multiselect",
+        label: "Skills",
         options: [
-          { value: 'js', label: 'JavaScript' },
-          { value: 'ts', label: 'TypeScript' },
-          { value: 'py', label: 'Python' }
-        ]
-      }
-    }
+          { value: "js", label: "JavaScript" },
+          { value: "ts", label: "TypeScript" },
+          { value: "py", label: "Python" },
+        ],
+      },
+    },
   };
 
   beforeEach(() => {
@@ -52,42 +57,42 @@ describe('FormStore', () => {
     jest.useRealTimers();
   });
 
-  describe('Subscription Management', () => {
-    it('should unsubscribe form subscriber', () => {
+  describe("Subscription Management", () => {
+    it("should unsubscribe form subscriber", () => {
       const subscriber = jest.fn();
       const unsubscribe = store.subscribe(subscriber);
 
       // Initial call
       expect(subscriber).toHaveBeenCalledTimes(1);
 
-      store.setFieldValue('name', 'John');
+      store.setFieldValue("name", "John");
       expect(subscriber).toHaveBeenCalledTimes(2);
 
       unsubscribe();
-      store.setFieldValue('name', 'Jane');
+      store.setFieldValue("name", "Jane");
       expect(subscriber).toHaveBeenCalledTimes(2);
     });
 
-    it('should unsubscribe field subscriber', () => {
+    it("should unsubscribe field subscriber", () => {
       const subscriber = jest.fn();
-      const unsubscribe = store.subscribeToField('name', subscriber);
+      const unsubscribe = store.subscribeToField("name", subscriber);
 
       // Initial call
       expect(subscriber).toHaveBeenCalledTimes(1);
 
-      store.setFieldValue('name', 'John');
+      store.setFieldValue("name", "John");
       expect(subscriber).toHaveBeenCalledTimes(2);
 
       unsubscribe();
-      store.setFieldValue('name', 'Jane');
+      store.setFieldValue("name", "Jane");
       expect(subscriber).toHaveBeenCalledTimes(2);
     });
   });
 
-  describe('Form Reset', () => {
-    it('should reset form to initial state', () => {
-      store.setFieldValue('name', 'John');
-      store.setFieldValue('age', 30);
+  describe("Form Reset", () => {
+    it("should reset form to initial state", () => {
+      store.setFieldValue("name", "John");
+      store.setFieldValue("age", 30);
 
       store.reset();
       const state = store.getState();
@@ -96,19 +101,19 @@ describe('FormStore', () => {
         name: null,
         age: null,
         email: null,
-        skills: null
+        skills: null,
       });
       expect(state.errors).toEqual({});
       expect(state.touched).toEqual({});
       expect(state.dirty).toBe(false);
     });
 
-    it('should reset form to provided values', () => {
+    it("should reset form to provided values", () => {
       const resetValues = {
-        name: 'Jane',
+        name: "Jane",
         age: 25,
-        email: 'jane@example.com',
-        skills: ['js', 'ts']
+        email: "jane@example.com",
+        skills: ["js", "ts"],
       };
 
       store.reset(resetValues);
@@ -120,8 +125,8 @@ describe('FormStore', () => {
       expect(state.dirty).toBe(false);
     });
   });
-  
-  describe('Custom Validation', () => {
+
+  describe("Custom Validation", () => {
     // it('should handle custom field validation', async () => {
     //   expect.assertions(1);
 
@@ -158,15 +163,15 @@ describe('FormStore', () => {
     //   expect(state.errors.name).toBe('Custom validation failed');
     // });
 
-    it('should handle form-level validation', async () => {
+    it("should handle form-level validation", async () => {
       expect.assertions(1);
 
       // Create a promise that resolves when validation is complete
       let validationDone = false;
-      const validationComplete = new Promise<void>(resolve => {
-        store.subscribe(state => {
+      const validationComplete = new Promise<void>((resolve) => {
+        store.subscribe((state) => {
           if (
-            state.errors.email === 'Email required for users under 18' &&
+            state.errors.email === "Email required for users under 18" &&
             !validationDone
           ) {
             validationDone = true;
@@ -177,8 +182,8 @@ describe('FormStore', () => {
 
       const formValidator = async (values: FormData): Promise<FormErrors> => {
         const errors: FormErrors = {};
-        if (values.age && values.age as number < 18 && !values.email) {
-          errors.email = 'Email required for users under 18';
+        if (values.age && (values.age as number) < 18 && !values.email) {
+          errors.email = "Email required for users under 18";
         }
         return errors;
       };
@@ -187,7 +192,7 @@ describe('FormStore', () => {
       await store.setFormValidator(formValidator);
       await store.setValues({
         age: 16,
-        email: ''
+        email: "",
       });
 
       // Advance timers and wait for validation
@@ -196,34 +201,34 @@ describe('FormStore', () => {
 
       // Check the result
       const state = store.getState();
-      expect(state.errors.email).toBe('Email required for users under 18');
+      expect(state.errors.email).toBe("Email required for users under 18");
     });
   });
 
-  describe('Subscription Management', () => {
-    it('should unsubscribe field subscriber', async () => {
+  describe("Subscription Management", () => {
+    it("should unsubscribe field subscriber", async () => {
       const subscriber = jest.fn();
-      const unsubscribe = store.subscribeToField('name', subscriber);
+      const unsubscribe = store.subscribeToField("name", subscriber);
 
       // Initial call
       expect(subscriber).toHaveBeenCalledTimes(1);
 
-      store.setFieldValue('name', 'John');
+      store.setFieldValue("name", "John");
       expect(subscriber).toHaveBeenCalledTimes(2);
 
       unsubscribe();
-      store.setFieldValue('name', 'Jane');
+      store.setFieldValue("name", "Jane");
       expect(subscriber).toHaveBeenCalledTimes(2);
     });
   });
 
-  describe('Performance and Edge Cases', () => {
-    it('should debounce validation calls', async () => {
-      const validationSpy = jest.spyOn(store as any, 'validateField');
+  describe("Performance and Edge Cases", () => {
+    it("should debounce validation calls", async () => {
+      const validationSpy = jest.spyOn(store as any, "validateField");
 
-      store.setFieldValue('name', 'J');
-      store.setFieldValue('name', 'Jo');
-      store.setFieldValue('name', 'John');
+      store.setFieldValue("name", "J");
+      store.setFieldValue("name", "Jo");
+      store.setFieldValue("name", "John");
 
       expect(validationSpy).toHaveBeenCalledTimes(3);
 
@@ -234,6 +239,72 @@ describe('FormStore', () => {
 
       const state = store.getState();
       expect(state.errors.name).toBeNull();
+    });
+  });
+
+  describe("FormStore Reference Data", () => {
+    const mockReferenceLoader = jest.fn();
+    const mockSchema: UISchema = {
+      fields: {
+        category: {
+          type: "select",
+          label: "Category",
+          reference: {
+            modelName: "Category",
+            displayField: "name",
+          },
+        },
+      },
+    };
+
+    beforeEach(() => {
+      mockReferenceLoader.mockReset();
+    });
+
+    it("loads reference data on initialization", async () => {
+      mockReferenceLoader.mockResolvedValueOnce([
+        { _id: "1", name: "Category 1" },
+        { _id: "2", name: "Category 2" },
+      ]);
+
+      const store = new FormStore(mockSchema, {}, mockReferenceLoader);
+
+      await waitFor(() => {
+        expect(mockReferenceLoader).toHaveBeenCalledWith("Category");
+        expect(store.getReferenceData("category")).toEqual([
+          { value: "1", label: "Category 1" },
+          { value: "2", label: "Category 2" },
+        ]);
+      });
+    });
+
+    it("handles reference loading states correctly", async () => {
+      mockReferenceLoader.mockImplementation(
+        () => new Promise((resolve) => setTimeout(resolve, 100))
+      );
+
+      const store = new FormStore(mockSchema, {}, mockReferenceLoader);
+
+      expect(store.isReferenceLoading("category")).toBe(true);
+
+      await waitFor(() => {
+        expect(store.isReferenceLoading("category")).toBe(false);
+      });
+    });
+
+    it("handles reference loading errors gracefully", async () => {
+      const consoleError = jest.spyOn(console, "error").mockImplementation();
+      mockReferenceLoader.mockRejectedValueOnce(new Error("Failed to load"));
+
+      const store = new FormStore(mockSchema, {}, mockReferenceLoader);
+
+      await waitFor(() => {
+        expect(store.isReferenceLoading("category")).toBe(false);
+        expect(store.getReferenceData("category")).toBeUndefined();
+        expect(consoleError).toHaveBeenCalled();
+      });
+
+      consoleError.mockRestore();
     });
   });
 });

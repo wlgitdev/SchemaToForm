@@ -1,4 +1,4 @@
-import { UISchema, UIFieldDefinition } from './types';
+import { UISchema, UIFieldDefinition } from "./types";
 
 export type FieldValue =
   | string
@@ -34,6 +34,10 @@ export interface FieldValidator {
   (value: FieldValue, values: FormData): Promise<FieldError>;
 }
 
+interface ReferenceData {
+  [key: string]: Array<{ value: string; label: string }>;
+}
+
 export class FormStore {
   private state: FormState;
   private schema: UISchema;
@@ -44,9 +48,29 @@ export class FormStore {
   private validationTimeout: number = 200;
   private validationTimers: Map<string, NodeJS.Timeout>;
   private pendingValidations: Map<string, Promise<void>>;
+  private referenceData: Record<
+    string,
+    Array<{ value: string; label: string }>
+  > = {};
+  private referenceLoading: Record<string, boolean> = {};
+  private referenceLoader?: (
+    modelName: string
+  ) => Promise<Array<{ _id: string; name: string }>>;
 
-  constructor(schema: UISchema, initialValues: FormData = {}) {
+  constructor(
+    schema: UISchema,
+    initialValues: FormData = {},
+    referenceLoader?: (
+      modelName: string
+    ) => Promise<Array<{ _id: string; name: string }>>
+  ) {
     this.schema = schema;
+    this.referenceLoader = referenceLoader;
+
+    if (!schema || !schema.fields) {
+      throw new Error("Invalid schema provided to FormStore");
+    }
+
     this.formSubscribers = new Set();
     this.fieldSubscribers = new Map();
     this.fieldValidators = new Map();
@@ -61,11 +85,15 @@ export class FormStore {
       dirty: false,
       valid: true,
       validating: false,
-      submitting: false
+      submitting: false,
     };
 
     // Setup field validators from schema
     this.setupValidators();
+
+    if (referenceLoader) {
+      this.loadReferences();
+    }
   }
 
   // Public API
@@ -111,25 +139,25 @@ export class FormStore {
 
     const newValues = {
       ...this.state.values,
-      [field]: value
+      [field]: value,
     };
 
     const newTouched = {
       ...this.state.touched,
-      [field]: true
+      [field]: true,
     };
 
     this.setState({
       ...this.state,
       values: newValues,
       touched: newTouched,
-      dirty: true
+      dirty: true,
     });
 
     // Notify field subscribers of value change
     const subscribers = this.fieldSubscribers.get(field);
     if (subscribers) {
-      subscribers.forEach(subscriber =>
+      subscribers.forEach((subscriber) =>
         subscriber(value, this.state.errors[field] || null)
       );
     }
@@ -154,13 +182,13 @@ export class FormStore {
 
     const newValues = {
       ...this.state.values,
-      ...filteredValues
+      ...filteredValues,
     };
 
     this.setState({
       ...this.state,
       values: newValues,
-      dirty: true
+      dirty: true,
     });
 
     this.validateForm(newValues);
@@ -178,7 +206,7 @@ export class FormStore {
       dirty: false,
       valid: true,
       validating: false,
-      submitting: false
+      submitting: false,
     });
   }
 
@@ -226,6 +254,52 @@ export class FormStore {
 
   // Private methods
 
+  private async loadReferences(): Promise<void> {
+    if (!this.referenceLoader) return;
+
+    const referenceFields = Object.entries(this.schema.fields).filter(
+      ([_, field]) => field.reference
+    );
+
+    await Promise.all(
+      referenceFields.map(async ([fieldName, field]) => {
+        if (!field.reference) return;
+
+        this.referenceLoading[fieldName] = true;
+        this.notifySubscribers();
+
+        try {
+          const data = await this.referenceLoader!(field.reference.modelName);
+          this.referenceData[fieldName] = data.map((item) => ({
+            value: item._id,
+            label:
+              (item[
+                field.reference!.displayField as keyof typeof item
+              ] as string) || item.name,
+          }));
+        } catch (error) {
+          console.error(
+            `Failed to load reference data for ${fieldName}:`,
+            error
+          );
+        } finally {
+          this.referenceLoading[fieldName] = false;
+          this.notifySubscribers();
+        }
+      })
+    );
+  }
+
+  public getReferenceData(
+    field: string
+  ): Array<{ value: string; label: string }> | undefined {
+    return this.referenceData[field];
+  }
+
+  public isReferenceLoading(field: string): boolean {
+    return this.referenceLoading[field] || false;
+  }
+
   private initializeValues(initialValues: FormData): FormData {
     const values: FormData = {};
     Object.entries(this.schema.fields).forEach(([field, definition]) => {
@@ -252,7 +326,7 @@ export class FormStore {
       }
 
       if (value) {
-        if (typeof value === 'string') {
+        if (typeof value === "string") {
           if (validation.minLength && value.length < validation.minLength) {
             return `${fieldDef.label} must be at least ${validation.minLength} characters`;
           }
@@ -270,7 +344,7 @@ export class FormStore {
           }
         }
 
-        if (typeof value === 'number') {
+        if (typeof value === "number") {
           if (validation.min !== undefined && value < validation.min) {
             return `${fieldDef.label} must be at least ${validation.min}`;
           }
@@ -282,7 +356,7 @@ export class FormStore {
 
       if (validation.custom) {
         const result = await validation.custom(value);
-        if (typeof result === 'string') return result;
+        if (typeof result === "string") return result;
         if (result === false) return `${fieldDef.label} is invalid`;
       }
 
@@ -304,12 +378,12 @@ export class FormStore {
     }
 
     // Create new validation promise
-    const validationPromise = new Promise<void>(resolve => {
+    const validationPromise = new Promise<void>((resolve) => {
       const timer = setTimeout(async () => {
         try {
           this.setState({
             ...this.state,
-            validating: true
+            validating: true,
           });
 
           const error = await validator(value, values);
@@ -318,21 +392,21 @@ export class FormStore {
             ...this.state,
             errors: {
               ...this.state.errors,
-              [field]: error
+              [field]: error,
             },
             validating: false,
-            valid: !error
+            valid: !error,
           });
 
           // Notify field subscribers of validation result
           const subscribers = this.fieldSubscribers.get(field);
           if (subscribers) {
-            subscribers.forEach(subscriber => subscriber(value, error));
+            subscribers.forEach((subscriber) => subscriber(value, error));
           }
 
           resolve();
         } catch (err) {
-          console.error('Validation error:', err);
+          console.error("Validation error:", err);
           resolve();
         }
       }, this.validationTimeout);
@@ -352,7 +426,7 @@ export class FormStore {
 
     this.setState({
       ...this.state,
-      validating: true
+      validating: true,
     });
 
     try {
@@ -362,23 +436,23 @@ export class FormStore {
         ...this.state,
         errors: {
           ...this.state.errors,
-          ...errors
+          ...errors,
         },
         valid: Object.keys(errors).length === 0,
-        validating: false
+        validating: false,
       });
 
       // Notify field subscribers of new errors
       Object.entries(errors).forEach(([field, error]) => {
         const subscribers = this.fieldSubscribers.get(field);
         if (subscribers) {
-          subscribers.forEach(subscriber => subscriber(values[field], error));
+          subscribers.forEach((subscriber) => subscriber(values[field], error));
         }
       });
 
       return errors;
     } catch (err) {
-      console.error('Form validation error:', err);
+      console.error("Form validation error:", err);
       return {};
     }
   }
@@ -389,7 +463,7 @@ export class FormStore {
   }
 
   private notifySubscribers(): void {
-    this.formSubscribers.forEach(subscriber => {
+    this.formSubscribers.forEach((subscriber) => {
       subscriber(this.state);
     });
   }

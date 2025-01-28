@@ -8,6 +8,10 @@ interface FormContextValue {
   setValues: (values: Partial<FormData>) => void;
   reset: (values?: FormData) => void;
   validate: () => Promise<boolean>;
+  getReferenceData: (
+    field: string
+  ) => Array<{ value: string; label: string }> | undefined;
+  isReferenceLoading: (field: string) => boolean;
 }
 
 const FormContext = createContext<FormContextValue | null>(null);
@@ -40,7 +44,9 @@ export const FormProvider: React.FC<FormProviderProps> = ({
       setFieldValue: store.setFieldValue.bind(store),
       setValues: store.setValues.bind(store),
       reset: store.reset.bind(store),
-      validate: store.validate.bind(store)
+      validate: store.validate.bind(store),
+      getReferenceData: store.getReferenceData.bind(store),
+      isReferenceLoading: store.isReferenceLoading.bind(store),
     }),
     [state, store]
   );

@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { useField } from './FormContext';
+import { useField, useForm } from './FormContext';
 
 interface BaseFieldProps {
   name: string;
@@ -107,6 +107,21 @@ export const SelectField: React.FC<SelectFieldProps> = ({
   disabled = false
 }) => {
   const { value, error, touched, setValue } = useField(name);
+  const { getReferenceData, isReferenceLoading } = useForm();
+
+  const referenceData = getReferenceData(name);
+  const loading = isReferenceLoading(name);
+  const fieldOptions = referenceData || options;
+
+  if (loading) {
+    return (
+      <FieldWrapper name={name} label={label} className={className}>
+        <select disabled className="loading-select">
+          <option>Loading...</option>
+        </select>
+      </FieldWrapper>
+    );
+  }
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -131,15 +146,15 @@ export const SelectField: React.FC<SelectFieldProps> = ({
         disabled={disabled}
         className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm
           focus:border-blue-500 focus:ring-blue-500 sm:text-sm
-          ${error ? 'border-red-300' : 'border-gray-300'}
-          ${disabled ? 'bg-gray-100' : ''}`}
+          ${error ? "border-red-300" : "border-gray-300"}
+          ${disabled ? "bg-gray-100" : ""}`}
       >
         {placeholder && (
           <option value="" disabled>
             {placeholder}
           </option>
         )}
-        {options.map(option => (
+        {fieldOptions.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>
@@ -298,15 +313,15 @@ export const MultiSelectField: React.FC<MultiSelectFieldProps> = ({
         disabled={disabled}
         className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm
           focus:border-blue-500 focus:ring-blue-500 sm:text-sm
-          ${error ? 'border-red-300' : 'border-gray-300'}
-          ${disabled ? 'bg-gray-100' : ''}`}
+          ${error ? "border-red-300" : "border-gray-300"}
+          ${disabled ? "bg-gray-100" : ""}`}
       >
         {placeholder && (
           <option value="" disabled>
             {placeholder}
           </option>
         )}
-        {options.map(option => (
+        {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>

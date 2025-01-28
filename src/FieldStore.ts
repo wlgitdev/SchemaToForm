@@ -185,7 +185,7 @@ export class FieldStore {
     }
   }
 
-  private async validate(value: FieldValue): Promise<void> {
+  async validate(value: FieldValue): Promise<void> {
     if (!this.validator) return;
 
     if (this.validationTimer) {
