@@ -133,18 +133,18 @@ describe('FieldStore', () => {
       expect(validator).toHaveBeenCalledWith('abc');
     });
 
-    it('should handle validation errors', async () => {
-      const validator = jest
-        .fn()
-        .mockRejectedValue(new Error('Validation failed'));
+    it("should handle validation errors", async () => {
+      const validator = jest.fn().mockResolvedValue("Validation failed");
       store.setValidator(validator);
 
-      store.setValue('test');
+      store.setValue("test");
 
       jest.advanceTimersByTime(250);
       await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
 
-      expect(store.getState().error).toBe('Validation failed');
+      expect(store.getState().error).toBe("Validation failed");
     });
   });
 

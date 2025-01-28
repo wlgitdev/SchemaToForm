@@ -1,4 +1,4 @@
-import { UIFieldDefinition, UIFieldType } from './types';
+import { UIFieldDefinition } from './types';
 import { FieldValue } from './FormStore';
 
 export interface FieldState {
@@ -33,7 +33,7 @@ export class FieldStore {
       touched: false,
       dirty: false,
       validating: false,
-      dependent: false
+      dependent: false,
     };
 
     // Setup dependencies
@@ -54,15 +54,15 @@ export class FieldStore {
   /**
    * Set field value
    */
-  setValue(value: FieldValue): void {
+  async setValue(value: FieldValue): Promise<void> {
     this.setState({
       ...this.state,
       value,
       touched: true,
-      dirty: true
+      dirty: true,
     });
 
-    this.validate(value);
+    await this.validate(value);
   }
 
   /**
@@ -71,7 +71,7 @@ export class FieldStore {
   setError(error: string | null): void {
     this.setState({
       ...this.state,
-      error
+      error,
     });
   }
 
@@ -85,7 +85,7 @@ export class FieldStore {
       touched: false,
       dirty: false,
       validating: false,
-      dependent: this.state.dependent
+      dependent: this.state.dependent,
     });
   }
 
@@ -167,18 +167,18 @@ export class FieldStore {
     }
 
     switch (this.definition.type) {
-      case 'text':
-        return '';
-      case 'number':
+      case "text":
+        return "";
+      case "number":
         return 0;
-      case 'checkbox':
+      case "checkbox":
         return false;
-      case 'date':
+      case "date":
         return null;
-      case 'select':
-        return '';
-      case 'multiselect':
-      case 'list':
+      case "select":
+        return "";
+      case "multiselect":
+      case "list":
         return [];
       default:
         return null;
@@ -188,33 +188,34 @@ export class FieldStore {
   private async validate(value: FieldValue): Promise<void> {
     if (!this.validator) return;
 
-    // Clear previous validation timer
     if (this.validationTimer) {
       clearTimeout(this.validationTimer);
     }
 
-    // Set up new validation timer
-    this.validationTimer = setTimeout(async () => {
-      this.setState({
-        ...this.state,
-        validating: true
-      });
+    return new Promise<void>((resolve) => {
+      this.validationTimer = setTimeout(async () => {
+        this.setState({
+          ...this.state,
+          validating: true,
+        });
 
-      try {
-        const error = await this.validator!(value);
-        this.setState({
-          ...this.state,
-          error,
-          validating: false
-        });
-      } catch (err) {
-        this.setState({
-          ...this.state,
-          error: err instanceof Error ? err.message : 'Validation failed',
-          validating: false
-        });
-      }
-    }, this.validationTimeout);
+        try {
+          const error = await this.validator!(value);
+          this.setState({
+            ...this.state,
+            error,
+            validating: false,
+          });
+        } catch (err) {
+          this.setState({
+            ...this.state,
+            error: err instanceof Error ? err.message : "Validation failed",
+            validating: false,
+          });
+        }
+        resolve();
+      }, this.validationTimeout);
+    });
   }
 
   private evaluateDependencyRule(
@@ -222,21 +223,21 @@ export class FieldStore {
     dependentValue: FieldValue
   ): boolean {
     switch (rule.operator) {
-      case 'equals':
+      case "equals":
         return dependentValue === rule.value;
-      case 'notEquals':
+      case "notEquals":
         return dependentValue !== rule.value;
-      case 'contains':
+      case "contains":
         return String(dependentValue).includes(String(rule.value));
-      case 'notContains':
+      case "notContains":
         return !String(dependentValue).includes(String(rule.value));
-      case 'greaterThan':
+      case "greaterThan":
         return Number(dependentValue) > Number(rule.value);
-      case 'lessThan':
+      case "lessThan":
         return Number(dependentValue) < Number(rule.value);
-      case 'isNull':
+      case "isNull":
         return dependentValue === null || dependentValue === undefined;
-      case 'isNotNull':
+      case "isNotNull":
         return dependentValue !== null && dependentValue !== undefined;
       default:
         return false;
@@ -249,7 +250,7 @@ export class FieldStore {
   }
 
   private notifySubscribers(): void {
-    this.subscribers.forEach(subscriber => {
+    this.subscribers.forEach((subscriber) => {
       subscriber(this.state);
     });
   }
