@@ -1,5 +1,6 @@
 import { UIFieldDefinition } from './types';
 import { FieldValue } from './FormStore';
+import { FieldTransformer } from './fieldTransformers';
 
 export interface FieldState {
   value: FieldValue;
@@ -13,6 +14,7 @@ export interface FieldState {
 export type FieldSubscriber = (state: FieldState) => void;
 
 export class FieldStore {
+  private transformer: FieldTransformer;
   private state: FieldState;
   private definition: UIFieldDefinition;
   private subscribers: Set<FieldSubscriber>;
@@ -22,13 +24,17 @@ export class FieldStore {
   private dependencyFields: Set<string>;
 
   constructor(definition: UIFieldDefinition, initialValue?: FieldValue) {
+    this.transformer = new FieldTransformer(definition);
     this.definition = definition;
     this.subscribers = new Set();
     this.dependencyFields = new Set();
 
     // Initialize state
     this.state = {
-      value: initialValue ?? this.getDefaultValue(),
+      value:
+        initialValue !== undefined
+          ? this.transformer.fromDisplay(initialValue)
+          : this.getDefaultValue(),
       error: null,
       touched: false,
       dirty: false,
@@ -55,16 +61,20 @@ export class FieldStore {
    * Set field value
    */
   async setValue(value: FieldValue): Promise<void> {
+    const transformedValue = this.transformer.fromDisplay(value);
     this.setState({
       ...this.state,
-      value,
+      value: transformedValue,
       touched: true,
       dirty: true,
     });
 
-    await this.validate(value);
+    await this.validate(transformedValue);
   }
-
+  getValue(): FieldValue {
+    return this.transformer.toDisplay(this.state.value);
+  }
+  
   /**
    * Set field error
    */

@@ -1,6 +1,7 @@
 import { DependencyHandler } from "./DependencyHandler";
 import { UISchema, UIFieldDefinition } from "./types";
 
+// FormStore.ts
 export type FieldValue =
   | string
   | number
@@ -8,7 +9,9 @@ export type FieldValue =
   | Date
   | string[]
   | number[]
-  | null;
+  | null
+  | undefined;
+  
 export type FormData = Record<string, FieldValue>;
 export type FieldError = string | null;
 export type FormErrors = Record<string, FieldError>;
@@ -146,7 +149,7 @@ export class FormStore {
       field,
       newValues
     );
-    
+
     effects.forEach((effect, targetField) => {
       if (effect.setValue !== undefined) {
         newValues[targetField] = effect.setValue;
