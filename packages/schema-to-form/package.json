@@ -1,5 +1,5 @@
 {
-  "name": "schema-registry-test",
+  "name": "@schematoform/schema-to-form",
   "version": "1.0.0",
   "description": "Test implementation of Schema Registry",
   "main": "dist/index.js",

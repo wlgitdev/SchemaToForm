@@ -4,7 +4,7 @@
     "module": "commonjs",
     "lib": ["ES2020", "dom"],
     "declaration": true,
-    "outDir": "./dist",
+    "outDir": "packages/schema-to-form/dist",
     "rootDir": "./src",
     "strict": true,
     "jsx": "react-jsx",
@@ -18,5 +18,10 @@
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "**/*.test.ts", "dist"]
+  "exclude": [
+    "node_modules",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "packages/schema-to-form/dist"
+  ]
 }
