@@ -17,6 +17,31 @@ interface CachedSchema {
   version: number;
 }
 
+const readOnlyFieldsTransformer: SchemaTransformer = (
+  schema: UISchema
+): UISchema => {
+  const transformedFields = { ...schema.fields };
+
+  Object.entries(transformedFields).forEach(([fieldName, field]) => {
+    if (field.readOnly) {
+      transformedFields[fieldName] = {
+        ...field,
+        validation: field.validation
+          ? {
+              ...field.validation,
+              required: false,
+            }
+          : undefined,
+      };
+    }
+  });
+
+  return {
+    ...schema,
+    fields: transformedFields,
+  };
+};
+
 export class SchemaRegistry {
   private schemas: Map<string, CachedSchema>;
   private validators: SchemaValidator[];
@@ -27,7 +52,11 @@ export class SchemaRegistry {
   private constructor(options: SchemaRegistryOptions = {}) {
     this.schemas = new Map();
     this.validators = options.validators || [];
-    this.transformers = options.transformers || [];
+    // Always include readOnlyFieldsTransformer as the first transformer
+    this.transformers = [
+      readOnlyFieldsTransformer,
+      ...(options.transformers || []),
+    ];
     this.enableCaching = options.enableCaching ?? true;
   }
 
@@ -36,6 +65,13 @@ export class SchemaRegistry {
   ): SchemaRegistry {
     if (!SchemaRegistry.instance) {
       SchemaRegistry.instance = new SchemaRegistry(options);
+    }
+    // If instance exists but new transformers are provided, add them after the readOnlyFieldsTransformer
+    else if (options.transformers) {
+      SchemaRegistry.instance.transformers = [
+        readOnlyFieldsTransformer,
+        ...options.transformers,
+      ];
     }
     return SchemaRegistry.instance;
   }

@@ -28,10 +28,10 @@ export class DependencyHandler {
 
     dependentFields.forEach((dependentField) => {
       const fieldDef = this.fields[dependentField];
-      if (!fieldDef.dependencies) return;
+      if (!fieldDef!.dependencies) return;
 
       const fieldEffects = this.evaluateFieldDependencies(
-        fieldDef.dependencies,
+        fieldDef!.dependencies,
         formData
       );
       if (fieldEffects) {
@@ -110,7 +110,7 @@ export class DependencyHandler {
         // If rule has AND conditions with effects, use the last AND effect
         if (rule.and?.length) {
           const lastAndRule = rule.and[rule.and.length - 1];
-          return lastAndRule.effect;
+          return lastAndRule!.effect;
         }
         return rule.effect;
       }

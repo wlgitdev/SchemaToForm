@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { FC, JSX, ReactElement } from 'react';
 import { FormProvider, useFormSubmit } from './FormContext';
 import { UISchema, UIFieldDefinition } from '../types';
 import { FormData } from '../FormStore';
@@ -131,15 +131,15 @@ const FormFields: React.FC<{
   );
 };
 
-export const DynamicForm: React.FC<DynamicFormProps> = ({
+export const DynamicForm = ({
   schema,
   initialValues,
   onSubmit,
   submitLabel = 'Submit',
   loading = false,
-  className = ''
-}) => {
-  const FormContent = () => {
+  className = "",
+}: DynamicFormProps): JSX.Element => {
+  const FormContent = (): JSX.Element => {
     const { handleSubmit, isValid, isSubmitting, isDirty } =
       useFormSubmit(onSubmit);
 
@@ -186,7 +186,7 @@ export const createForm = (
   schema: UISchema,
   config?: Omit<DynamicFormProps, 'schema'>
 ) => {
-  return (props: Omit<DynamicFormProps, 'schema'>) => (
+  return (props: Omit<DynamicFormProps, "schema">): JSX.Element => (
     <DynamicForm schema={schema} {...config} {...props} />
   );
 };

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo } from 'react';
+import React, { createContext, JSX, useContext, useEffect, useMemo } from 'react';
 import { FormStore, FormState, FieldValue, FormData } from '../FormStore';
 import { UISchema } from '../types';
 
@@ -23,12 +23,12 @@ interface FormProviderProps {
   onSubmit?: (values: FormData) => Promise<void>;
 }
 
-export const FormProvider: React.FC<FormProviderProps> = ({
+export const FormProvider = ({
   schema,
   initialValues,
   children,
   onSubmit
-}) => {
+}: FormProviderProps): JSX.Element => {
   const store = useMemo(() => new FormStore(schema, initialValues), [schema]);
   const [state, setState] = React.useState<FormState>(store.getState());
 
@@ -46,7 +46,7 @@ export const FormProvider: React.FC<FormProviderProps> = ({
       reset: store.reset.bind(store),
       validate: store.validate.bind(store),
       getReferenceData: store.getReferenceData.bind(store),
-      isReferenceLoading: store.isReferenceLoading.bind(store),
+      isReferenceLoading: store.isReferenceLoading.bind(store)
     }),
     [state, store]
   );

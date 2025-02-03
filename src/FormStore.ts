@@ -158,14 +158,14 @@ export class FormStore {
         newValues[targetField] = null;
       }
       if (effect.hide !== undefined) {
-        this.schema.fields[targetField].hidden = effect.hide;
+        this.schema.fields[targetField]!.hidden = effect.hide;
       }
       if (effect.disable !== undefined) {
-        this.schema.fields[targetField].readOnly = effect.disable;
+        this.schema.fields[targetField]!.readOnly = effect.disable;
       }
       if (effect.setValidation) {
-        this.schema.fields[targetField].validation = {
-          ...this.schema.fields[targetField].validation,
+        this.schema.fields[targetField]!.validation = {
+          ...this.schema.fields[targetField]!.validation,
           ...effect.setValidation,
         };
       }

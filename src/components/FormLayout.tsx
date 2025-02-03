@@ -15,17 +15,19 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="border rounded-lg overflow-hidden mb-4">
+    <div className="mb-6 border rounded-lg overflow-hidden bg-white">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-2 text-left bg-gray-50 hover:bg-gray-100 
-          flex justify-between items-center"
+        className={`w-full flex items-center justify-between text-left 
+          px-4 py-3 bg-gray-50 hover:bg-gray-100
+          transition-colors duration-150 ease-in-out border-b
+          ${isOpen ? "border-gray-200" : "border-transparent"}`}
       >
-        <span className="font-medium">{title}</span>
+        <span className="font-medium text-gray-900">{title}</span>
         <svg
-          className={`w-5 h-5 transform transition-transform ${
-            isOpen ? "rotate-180" : ""
+          className={`w-4 h-4 transform transition-transform ${
+            isOpen ? 'rotate-180' : ''
           }`}
           fill="none"
           viewBox="0 0 24 24"
@@ -39,13 +41,14 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
           />
         </svg>
       </button>
-      <div
-        className={`transition-all duration-200 ease-in-out ${
-          isOpen ? "max-h-full p-4" : "max-h-0 p-0"
-        } overflow-hidden`}
-      >
-        {children}
-      </div>
+      {isOpen && (
+        <div
+          className={`${isOpen ? '' : 'hidden'} 
+          bg-white px-4 py-4 border-gray-100`}
+        >
+          {children}
+        </div>
+      )}
     </div>
   );
 };
@@ -93,10 +96,10 @@ export const FormSection: React.FC<FormSectionProps> = ({
 }) => {
   const content = (
     <>
-      {(title || description) && (
+      {(title || description) && !collapsible && (
         <div className="mb-4">
           {title && (
-            <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+            <h3 className="text-base font-medium text-gray-900">{title}</h3>
           )}
           {description && (
             <p className="mt-1 text-sm text-gray-500">{description}</p>
@@ -110,10 +113,13 @@ export const FormSection: React.FC<FormSectionProps> = ({
   if (collapsible) {
     return (
       <CollapsibleSection title={title || ""} defaultOpen={defaultOpen}>
+        {description && (
+          <p className="text-sm text-gray-500 mb-4">{description}</p>
+        )}
         {content}
       </CollapsibleSection>
     );
   }
 
-  return <div className="mb-8">{content}</div>;
+  return <div className="mb-6 p-4 border rounded-lg bg-white">{content}</div>;
 };
