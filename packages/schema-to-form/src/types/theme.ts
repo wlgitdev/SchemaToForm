@@ -22,6 +22,13 @@ export interface FormTheme {
     header: string;
     title: string;
     content: string;
+    collapsible: {
+      container: string;
+      button: string;
+      icon: string;
+      iconOpen: string;
+      content: string;
+    };
   };
   button: {
     base: string;
@@ -63,6 +70,14 @@ export const defaultTheme: FormTheme = {
     header: "flex items-center justify-between mb-4",
     title: "text-lg font-medium text-gray-900",
     content: "space-y-4",
+    collapsible: {
+      container: "mb-6 border rounded-lg overflow-hidden bg-white",
+      button:
+        "w-full flex items-center justify-between text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors duration-150 ease-in-out border-b",
+      icon: "w-4 h-4 transform transition-transform",
+      iconOpen: "rotate-180",
+      content: "bg-white px-4 py-4 border-gray-100",
+    },
   },
   button: {
     base: "px-4 py-2 rounded-md text-white font-medium transition-colors duration-200",

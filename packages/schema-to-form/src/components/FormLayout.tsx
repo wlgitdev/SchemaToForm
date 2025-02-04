@@ -12,22 +12,22 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   defaultOpen = false,
   children,
 }) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const [isOpen, setIsOpen] = React.useState(defaultOpen);
+  const theme = useFormTheme();
 
   return (
-    <div className="mb-6 border rounded-lg overflow-hidden bg-white">
+    <div className={theme.section.collapsible.container}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between text-left 
-          px-4 py-3 bg-gray-50 hover:bg-gray-100
-          transition-colors duration-150 ease-in-out border-b
-          ${isOpen ? "border-gray-200" : "border-transparent"}`}
+        className={`${theme.section.collapsible.button} ${
+          isOpen ? "border-gray-200" : "border-transparent"
+        }`}
       >
-        <span className="font-medium text-gray-900">{title}</span>
+        <span className={theme.section.title}>{title}</span>
         <svg
-          className={`w-4 h-4 transform transition-transform ${
-            isOpen ? 'rotate-180' : ''
+          className={`${theme.section.collapsible.icon} ${
+            isOpen ? theme.section.collapsible.iconOpen : ""
           }`}
           fill="none"
           viewBox="0 0 24 24"
@@ -42,12 +42,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
         </svg>
       </button>
       {isOpen && (
-        <div
-          className={`${isOpen ? '' : 'hidden'} 
-          bg-white px-4 py-4 border-gray-100`}
-        >
-          {children}
-        </div>
+        <div className={theme.section.collapsible.content}>{children}</div>
       )}
     </div>
   );
@@ -69,31 +64,27 @@ interface FormSectionProps {
   children: React.ReactNode;
 }
 
-export const FormSection: React.FC<FormSectionProps> = ({ title, collapsible, defaultOpen = true, children }) => {
-  const [isOpen, setIsOpen] = React.useState(defaultOpen);
+export const FormSection: React.FC<FormSectionProps> = ({ title, collapsible = false, defaultOpen = true, children }) => {
   const theme = useFormTheme();
 
   if (!title) {
     return <div className={theme.section.content}>{children}</div>;
   }
 
+  if (collapsible) {
+    return (
+      <CollapsibleSection title={title} defaultOpen={defaultOpen}>
+        <div className={theme.section.content}>{children}</div>
+      </CollapsibleSection>
+    );
+  }
+
   return (
     <div className={theme.section.container}>
       <div className={theme.section.header}>
         <h3 className={theme.section.title}>{title}</h3>
-        {collapsible && (
-          <button
-            type="button"
-            onClick={() => setIsOpen(!isOpen)}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            {isOpen ? "Collapse" : "Expand"}
-          </button>
-        )}
       </div>
-      {(!collapsible || isOpen) && (
         <div className={theme.section.content}>{children}</div>
-      )}
     </div>
   );
 };
