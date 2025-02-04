@@ -3,9 +3,11 @@ import { useField, useForm } from './FormContext';
 
 interface BaseFieldProps {
   name: string;
-  label?: string;
-  className?: string;
+  label: string;
   disabled?: boolean;
+  className?: string;
+  labelClassName?: string;
+  inputClassName?: string;
 }
 
 interface FieldWrapperProps extends BaseFieldProps {
@@ -38,7 +40,7 @@ const FieldWrapper: React.FC<FieldWrapperProps> = ({
 );
 
 // Input Field
-interface InputFieldProps extends BaseFieldProps {
+export interface InputFieldProps extends BaseFieldProps {
   type?: 'text' | 'number' | 'email' | 'password' | 'date';
   placeholder?: string;
 }
@@ -93,9 +95,10 @@ interface SelectOption {
   label: string;
 }
 
-interface SelectFieldProps extends BaseFieldProps {
+export interface SelectFieldProps extends BaseFieldProps {
   options: SelectOption[];
   placeholder?: string;
+  selectClassName?: string;
 }
 
 export const SelectField: React.FC<SelectFieldProps> = ({
@@ -167,6 +170,8 @@ export const SelectField: React.FC<SelectFieldProps> = ({
 // Checkbox Field
 interface CheckboxFieldProps extends BaseFieldProps {
   text?: string;
+  checkboxClassName?: string;
+  containerClassName?: string;
 }
 
 export const CheckboxField: React.FC<CheckboxFieldProps> = ({
@@ -271,7 +276,7 @@ export const RadioGroupField: React.FC<RadioGroupFieldProps> = ({
 };
 
 // Multi-select Field
-interface MultiSelectFieldProps extends BaseFieldProps {
+interface MultiSelectFieldProps extends SelectFieldProps {
   options: SelectOption[];
   placeholder?: string;
 }

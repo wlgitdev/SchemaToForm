@@ -1,6 +1,6 @@
 import React, { FC, JSX, ReactElement } from 'react';
 import { FormProvider, useFormSubmit } from './FormContext';
-import { UISchema, UIFieldDefinition } from '../types';
+import { UISchema, UIFieldDefinition, FormTheme } from '../types';
 import { FormData } from '../FormStore';
 import {
   InputField,
@@ -9,6 +9,7 @@ import {
   MultiSelectField
 } from './FormFields';
 import { FormSection, GridContainer } from './FormLayout';
+import { ThemeProvider, useFormTheme } from '../contexts/ThemeContext';
 
 interface DynamicFormProps {
   schema: UISchema;
@@ -24,65 +25,65 @@ const FieldRenderer: React.FC<{
   field: UIFieldDefinition;
   disabled?: boolean;
 }> = ({ name, field, disabled }) => {
+  const theme = useFormTheme();
+
   const commonProps = {
     name,
     label: field.label,
     disabled: disabled || field.readOnly,
-    className: field.hidden ? 'hidden' : undefined
+    className: field.hidden ? "hidden" : theme.field.container,
+    labelClassName: theme.field.label,
+    inputClassName: theme.field.input,
   };
 
   switch (field.type) {
-    case 'text':
+    case "text":
+    case "number":
+    case "date":
       return (
         <InputField
           {...commonProps}
-          type="text"
+          type={field.type}
           placeholder={field.placeholder}
         />
       );
 
-    case 'number':
-      return (
-        <InputField
-          {...commonProps}
-          type="number"
-          placeholder={field.placeholder}
-        />
-      );
-
-    case 'date':
-      return (
-        <InputField
-          {...commonProps}
-          type="date"
-          placeholder={field.placeholder}
-        />
-      );
-
-    case 'select':
+    case "select":
       return (
         <SelectField
           {...commonProps}
           options={field.options || []}
           placeholder={field.placeholder}
+          selectClassName={theme.field.select}
         />
       );
 
-    case 'checkbox':
-      return <CheckboxField {...commonProps} text={field.placeholder} />;
+    case "checkbox":
+      return (
+        <CheckboxField
+          {...commonProps}
+          text={field.placeholder}
+          checkboxClassName={theme.field.checkbox.input}
+          containerClassName={theme.field.checkbox.container}
+          labelClassName={theme.field.checkbox.label}
+        />
+      );
 
-    case 'multiselect':
+    case "multiselect":
       return (
         <MultiSelectField
           {...commonProps}
           options={field.options || []}
           placeholder={field.placeholder}
+          selectClassName={theme.field.multiselect}
         />
       );
 
     default:
       return (
-        <div className="text-red-600">Unsupported field type: {field.type}</div>
+        <div className={theme.field.error}>
+          Unsupported field type: {field.type}
+        </div>
       );
   }
 };
@@ -114,7 +115,6 @@ const FormFields: React.FC<{
             title={group.label}
             collapsible={group.collapsible}
             defaultOpen={true}
-            columns={2} // Default to 2 columns for groups
           >
               {renderFields(group.fields)}
           </FormSection>
@@ -125,7 +125,7 @@ const FormFields: React.FC<{
 
   // If no groups are defined, use a single responsive grid
   return (
-    <GridContainer columns={2}>
+    <GridContainer>
       {renderFields(Object.keys(schema.fields))}
     </GridContainer>
   );
@@ -135,35 +135,45 @@ export const DynamicForm = ({
   schema,
   initialValues,
   onSubmit,
-  submitLabel = 'Submit',
+  submitLabel = "Submit",
   loading = false,
   className = "",
-}: DynamicFormProps): JSX.Element => {
-  const FormContent = (): JSX.Element => {
-    const { handleSubmit, isValid, isSubmitting, isDirty } =
-      useFormSubmit(onSubmit);
+  theme,
+}: DynamicFormProps & { theme?: Partial<FormTheme> }): JSX.Element => {
+  const FormContent: React.FC<{
+    submitLabel: string;
+    loading: boolean;
+    className?: string;
+  }> = ({ submitLabel, loading, className }) => {
+    const { handleSubmit, isValid, isSubmitting, isDirty } = useFormSubmit();
+    const theme = useFormTheme();
 
     const disabled = loading || isSubmitting;
+    const buttonClassName = `
+    ${theme.button.base}
+    ${
+      disabled || !isValid || !isDirty
+        ? theme.button.disabled
+        : theme.button.primary
+    }
+  `;
 
     return (
-      <form onSubmit={handleSubmit} className={className}>
-        <FormFields schema={schema} disabled={disabled} />
+      <form
+        onSubmit={handleSubmit}
+        className={`${theme.form.container} ${className}`}
+      >
+        <div className={theme.form.fieldsContainer}>
+          <FormFields schema={schema} disabled={disabled} />
+        </div>
 
-        <div className="mt-6 flex justify-end">
+        <div className={theme.form.submitContainer}>
           <button
             type="submit"
             disabled={disabled || !isValid || !isDirty}
-            className={`
-              px-4 py-2 rounded-md text-white font-medium
-              ${
-                disabled || !isValid || !isDirty
-                  ? 'bg-gray-300 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'
-              }
-              transition-colors duration-200
-            `}
+            className={buttonClassName}
           >
-            {isSubmitting ? 'Submitting...' : submitLabel}
+            {isSubmitting ? "Submitting..." : submitLabel}
           </button>
         </div>
       </form>
@@ -171,13 +181,19 @@ export const DynamicForm = ({
   };
 
   return (
-    <FormProvider
-      schema={schema}
-      initialValues={initialValues}
-      onSubmit={onSubmit}
-    >
-      <FormContent />
-    </FormProvider>
+    <ThemeProvider theme={theme}>
+      <FormProvider
+        schema={schema}
+        initialValues={initialValues}
+        onSubmit={onSubmit}
+      >
+        <FormContent
+          submitLabel={submitLabel}
+          loading={loading}
+          className={className}
+        />
+      </FormProvider>
+    </ThemeProvider>
   );
 };
 

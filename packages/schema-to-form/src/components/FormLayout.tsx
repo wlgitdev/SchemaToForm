@@ -1,4 +1,4 @@
-// components/FormLayout.tsx
+import { useFormTheme } from "../contexts/ThemeContext";
 import React, { useState } from "react";
 
 interface CollapsibleSectionProps {
@@ -54,72 +54,46 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
 };
 
 interface GridContainerProps {
-  columns?: number;
-  gap?: number;
   children: React.ReactNode;
 }
 
-export const GridContainer: React.FC<GridContainerProps> = ({
-  columns = 1,
-  gap = 4,
-  children,
-}) => {
-  const gridClass =
-    {
-      1: "grid-cols-1",
-      2: "grid-cols-1 md:grid-cols-2",
-      3: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
-      4: "grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
-    }[columns] || "grid-cols-1";
-
-  const gapClass = `gap-${gap}`;
-
-  return <div className={`grid ${gridClass} ${gapClass}`}>{children}</div>;
+export const GridContainer: React.FC<GridContainerProps> = ({ children }) => {
+  const theme = useFormTheme();
+  return <div className={theme.grid.container}>{children}</div>;
 };
 
 interface FormSectionProps {
   title?: string;
-  description?: string;
   collapsible?: boolean;
   defaultOpen?: boolean;
-  columns?: number;
   children: React.ReactNode;
 }
 
-export const FormSection: React.FC<FormSectionProps> = ({
-  title,
-  description,
-  collapsible = false,
-  defaultOpen = true,
-  columns = 1,
-  children,
-}) => {
-  const content = (
-    <>
-      {(title || description) && !collapsible && (
-        <div className="mb-4">
-          {title && (
-            <h3 className="text-base font-medium text-gray-900">{title}</h3>
-          )}
-          {description && (
-            <p className="mt-1 text-sm text-gray-500">{description}</p>
-          )}
-        </div>
-      )}
-      <GridContainer columns={columns}>{children}</GridContainer>
-    </>
-  );
+export const FormSection: React.FC<FormSectionProps> = ({ title, collapsible, defaultOpen = true, children }) => {
+  const [isOpen, setIsOpen] = React.useState(defaultOpen);
+  const theme = useFormTheme();
 
-  if (collapsible) {
-    return (
-      <CollapsibleSection title={title || ""} defaultOpen={defaultOpen}>
-        {description && (
-          <p className="text-sm text-gray-500 mb-4">{description}</p>
-        )}
-        {content}
-      </CollapsibleSection>
-    );
+  if (!title) {
+    return <div className={theme.section.content}>{children}</div>;
   }
 
-  return <div className="mb-6 p-4 border rounded-lg bg-white">{content}</div>;
+  return (
+    <div className={theme.section.container}>
+      <div className={theme.section.header}>
+        <h3 className={theme.section.title}>{title}</h3>
+        {collapsible && (
+          <button
+            type="button"
+            onClick={() => setIsOpen(!isOpen)}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            {isOpen ? "Collapse" : "Expand"}
+          </button>
+        )}
+      </div>
+      {(!collapsible || isOpen) && (
+        <div className={theme.section.content}>{children}</div>
+      )}
+    </div>
+  );
 };
