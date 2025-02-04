@@ -1,10 +1,11 @@
 {
   "compilerOptions": {
+    "composite": true,
     "target": "ES2020",
     "module": "commonjs",
     "lib": ["ES2020", "dom"],
     "declaration": true,
-    "outDir": "packages/schema-to-form/dist",
+    "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
     "jsx": "react-jsx",
