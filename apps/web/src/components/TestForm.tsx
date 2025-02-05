@@ -2,6 +2,7 @@ import { DynamicForm } from "@schematoform/schema-to-form/components/DynamicForm
 import { UISchema } from "@schematoform/schema-to-form/types";
 import { FormData } from "@schematoform/schema-to-form/FormStore";
 import { FormTheme } from "@schematoform/schema-to-form/types";
+
 const customTheme: Partial<FormTheme> = {
   form: {
     container: "space-y-6",
@@ -113,6 +114,12 @@ const testSchema: UISchema = {
           operator: "equals",
           value: "Nonrecurring",
           effect: { hide: true, setValue: 0 },
+        },
+        {
+          field: "recurInterval",
+          operator: "notEquals",
+          value: "Nonrecurring",
+          effect: { hide: false, setValue: 1 },
         },
       ],
     },
@@ -383,14 +390,14 @@ const TestForm: React.FC<TestFormProps> = ({ onSubmit }) => {
       console.error("TestForm - Error in onSubmit:", error);
     }
   };
-
+  
   return (
-      <DynamicForm
-        schema={testSchema}
+    <DynamicForm
+      schema={testSchema}
       onSubmit={handleSubmit}
       submitLabel="Submit Form"
-        theme={customTheme}
-      />
+      theme={customTheme}
+    />
   );
 };
 
