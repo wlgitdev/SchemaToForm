@@ -12,6 +12,7 @@ interface FormContextValue {
     field: string
   ) => Array<{ value: string; label: string }> | undefined;
   isReferenceLoading: (field: string) => boolean;
+  submitForm?: (values: FormData) => Promise<void>;
 }
 
 const FormContext = createContext<FormContextValue | null>(null);
@@ -46,9 +47,10 @@ export const FormProvider = ({
       reset: store.reset.bind(store),
       validate: store.validate.bind(store),
       getReferenceData: store.getReferenceData.bind(store),
-      isReferenceLoading: store.isReferenceLoading.bind(store)
+      isReferenceLoading: store.isReferenceLoading.bind(store),
+      submitForm: onSubmit,
     }),
-    [state, store]
+    [state, store, onSubmit]
   );
 
   return (
@@ -87,23 +89,34 @@ export const useFormSubmit = (
   onSubmit?: (values: FormData) => Promise<void>
 ) => {
   const { state, validate } = useForm();
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!onSubmit) return;
+    if (!onSubmit) {
+      console.warn("No onSubmit handler provided");
+      return;
+    }
 
+    try {
+      setIsSubmitting(true);
     const isValid = await validate();
     if (isValid) {
       await onSubmit(state.values);
     }
+  } catch (error) {
+      console.error("Error submitting form:", error);
+  } finally {
+      setIsSubmitting(false);
+  }
   };
 
   return {
     handleSubmit,
     isValid: state.valid,
-    isSubmitting: state.submitting,
-    isDirty: state.dirty
+    isSubmitting,
+    isDirty: state.dirty,
   };
 };
 

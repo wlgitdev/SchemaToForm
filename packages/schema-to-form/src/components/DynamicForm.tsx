@@ -20,6 +20,14 @@ interface DynamicFormProps {
   className?: string;
 }
 
+interface FormContentProps {
+  schema: UISchema;
+  submitLabel: string;
+  loading: boolean;
+  className?: string;
+  onSubmit?: (values: FormData) => Promise<void>;
+}
+
 const FieldRenderer: React.FC<{
   name: string;
   field: UIFieldDefinition;
@@ -140,34 +148,37 @@ export const DynamicForm = ({
   className = "",
   theme,
 }: DynamicFormProps & { theme?: Partial<FormTheme> }): JSX.Element => {
-  const FormContent: React.FC<{
-    submitLabel: string;
-    loading: boolean;
-    className?: string;
-  }> = ({ submitLabel, loading, className }) => {
-    const { handleSubmit, isValid, isSubmitting, isDirty } = useFormSubmit();
+  const FormContent: React.FC<FormContentProps> = ({
+    schema,
+    submitLabel,
+    loading,
+    className,
+    onSubmit,
+  }) => {
+    const { handleSubmit, isValid, isSubmitting, isDirty } =
+      useFormSubmit(onSubmit);
     const theme = useFormTheme();
 
     const disabled = loading || isSubmitting;
     const buttonClassName = `
-    ${theme.button.base}
+    ${theme.button?.base || ""}
     ${
       disabled || !isValid || !isDirty
-        ? theme.button.disabled
-        : theme.button.primary
+        ? theme.button?.disabled || ""
+        : theme.button?.primary || ""
     }
   `;
 
     return (
       <form
         onSubmit={handleSubmit}
-        className={`${theme.form.container} ${className}`}
+        className={`${theme.form?.container || ""} ${className || ""}`}
       >
-        <div className={theme.form.fieldsContainer}>
+        <div className={theme.form?.fieldsContainer || ""}>
           <FormFields schema={schema} disabled={disabled} />
         </div>
 
-        <div className={theme.form.submitContainer}>
+        <div className={theme.form?.submitContainer || ""}>
           <button
             type="submit"
             disabled={disabled || !isValid || !isDirty}
@@ -188,9 +199,11 @@ export const DynamicForm = ({
         onSubmit={onSubmit}
       >
         <FormContent
+          schema={schema}
           submitLabel={submitLabel}
           loading={loading}
           className={className}
+          onSubmit={onSubmit}
         />
       </FormProvider>
     </ThemeProvider>
