@@ -8,7 +8,6 @@ const FormPage = () => {
   const [formData, setFormData] = useState<FormData | null>(null);
 
   const handleSubmit = useCallback(async (values: FormData) => {
-    console.log("FormPage - handleSubmit called with:", values);
     setFormData(values);
     setIsModalOpen(false);
   }, []);

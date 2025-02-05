@@ -375,13 +375,10 @@ interface TestFormProps {
 }
 
 const TestForm: React.FC<TestFormProps> = ({ onSubmit }) => {
-  console.log("TestForm rendering with onSubmit:", !!onSubmit); // Debug props
 
   const handleSubmit = async (data: FormData) => {
-    console.log("TestForm - handleSubmit called with:", data);
     try {
       await onSubmit(data);
-      console.log("TestForm - onSubmit completed successfully");
     } catch (error) {
       console.error("TestForm - Error in onSubmit:", error);
     }
