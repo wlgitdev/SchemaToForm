@@ -96,7 +96,7 @@ export class FormStore {
         field.options?.length &&
         !baseValues[fieldName]
       ) {
-        baseValues[fieldName] = field.options[0].value;
+        baseValues[fieldName] = field.options[0]!.value;
       }
     });
 
@@ -118,7 +118,7 @@ export class FormStore {
         baseValues[field] = effect.setValue;
       }
       if (effect.hide !== undefined) {
-        this.schema.fields[field].hidden = effect.hide;
+        this.schema.fields[field]!.hidden = effect.hide;
       }
     });
 
@@ -337,7 +337,7 @@ export class FormStore {
         field.options?.length &&
         !baseValues[fieldName]
       ) {
-        baseValues[fieldName] = field.options[0].value;
+        baseValues[fieldName] = field.options[0]!.value;
       }
     });
 
@@ -470,22 +470,22 @@ export class FormStore {
 
       // Apply schema modifications
       if (effect.hide !== undefined) {
-        this.schema.fields[fieldName].hidden = effect.hide;
+        this.schema.fields[fieldName]!.hidden = effect.hide;
       }
       if (effect.disable !== undefined) {
-        this.schema.fields[fieldName].readOnly = effect.disable;
+        this.schema.fields[fieldName]!.readOnly = effect.disable;
       }
       if (effect.setValidation) {
-        this.schema.fields[fieldName].validation = {
-          ...this.schema.fields[fieldName].validation,
+        this.schema.fields[fieldName]!.validation = {
+          ...this.schema.fields[fieldName]!.validation,
           ...effect.setValidation,
         };
       }
       if (effect.setOptions) {
-        this.schema.fields[fieldName].options = effect.setOptions;
+        this.schema.fields[fieldName]!.options = effect.setOptions;
       }
       if (effect.setOptionGroups) {
-        this.schema.fields[fieldName].optionGroups = effect.setOptionGroups;
+        this.schema.fields[fieldName]!.optionGroups = effect.setOptionGroups;
       }
     });
 
