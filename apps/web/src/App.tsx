@@ -1,7 +1,7 @@
-import FormSchemaTest from "./components/FormSchemaTest";
+import TestPage from "./components/TestPage";
 
 function App() {
-  return <FormSchemaTest />;
+  return <TestPage />;
 }
 
 export default App;
