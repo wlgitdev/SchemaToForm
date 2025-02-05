@@ -126,8 +126,23 @@ export class DependencyHandler {
   ): boolean {
     const actualValue = formData[field];
 
+  if (actualValue === null || actualValue === undefined) {
     switch (operator) {
+      case "isNull":
+        return true;
+      case "isNotNull":
+        return false;
       case "equals":
+        return expectedValue === null || expectedValue === undefined;
+      case "notEquals":
+        return expectedValue !== null && expectedValue !== undefined;
+      default:
+        return false;
+    }
+  }
+
+  switch (operator) {
+    case "equals":
         return actualValue === expectedValue;
       case "notEquals":
         return actualValue !== expectedValue;

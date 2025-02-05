@@ -1,5 +1,5 @@
 import { DependencyHandler } from "./DependencyHandler";
-import { UISchema, UIFieldDefinition } from "./types";
+import { UISchema, UIFieldDefinition, FieldEffect } from "./types";
 
 // FormStore.ts
 export type FieldValue =
@@ -57,7 +57,7 @@ export class FormStore {
     modelName: string
   ) => Promise<Array<{ _id: string; name: string }>>;
   private dependencyHandler: DependencyHandler;
-  
+
   constructor(
     schema: UISchema,
     initialValues: FormData = {},
@@ -77,10 +77,54 @@ export class FormStore {
     this.fieldValidators = new Map();
     this.validationTimers = new Map();
     this.pendingValidations = new Map();
+    this.dependencyHandler = new DependencyHandler(schema.fields);
+
+    const processedState = this.initializeStateWithDependencies(initialValues);
+    this.state = processedState;
+
+    this.setupValidators();
+
+    if (referenceLoader) {
+      this.loadReferences();
+    }
+
+    // For select fields with dependencies, set initial value to first option
+    const baseValues = this.initializeValues(initialValues);
+    Object.entries(schema.fields).forEach(([fieldName, field]) => {
+      if (
+        field.type === "select" &&
+        field.options?.length &&
+        !baseValues[fieldName]
+      ) {
+        baseValues[fieldName] = field.options[0].value;
+      }
+    });
+
+    // Evaluate initial dependencies based on these values
+    const effects = new Map();
+    Object.keys(schema.fields).forEach((field) => {
+      const fieldEffects = this.dependencyHandler.evaluateDependencies(
+        field,
+        baseValues
+      );
+      fieldEffects.forEach((effect, targetField) => {
+        effects.set(targetField, effect);
+      });
+    });
+
+    // Apply all effects to values and schema
+    effects.forEach((effect, field) => {
+      if (effect.setValue !== undefined) {
+        baseValues[field] = effect.setValue;
+      }
+      if (effect.hide !== undefined) {
+        this.schema.fields[field].hidden = effect.hide;
+      }
+    });
 
     // Initialize state
     this.state = {
-      values: this.initializeValues(initialValues),
+      values: baseValues,
       errors: {},
       touched: {},
       dirty: false,
@@ -95,8 +139,6 @@ export class FormStore {
     if (referenceLoader) {
       this.loadReferences();
     }
-
-    this.dependencyHandler = new DependencyHandler(schema.fields);
   }
 
   // Public API
@@ -145,10 +187,9 @@ export class FormStore {
       [field]: value,
     };
     // Evaluate dependencies and apply effects
-    const effects = this.dependencyHandler.evaluateDependencies(
-      field,
-      newValues
-    );
+
+    const effects = this.evaluateAllDependencies(newValues);
+    const newState = this.applyEffectsToState(newValues, effects);
 
     effects.forEach((effect, targetField) => {
       if (effect.setValue !== undefined) {
@@ -178,9 +219,12 @@ export class FormStore {
 
     this.setState({
       ...this.state,
-      values: newValues,
-      touched: newTouched,
+      ...newState,
       dirty: true,
+      touched: {
+        ...this.state.touched,
+        [field]: true,
+      },
     });
 
     // Notify field subscribers of value change
@@ -192,7 +236,7 @@ export class FormStore {
     }
 
     // Await validation
-    await this.validateField(field, value, newValues);
+    await this.validateField(field, value, newState.values);
   }
 
   /**
@@ -282,6 +326,29 @@ export class FormStore {
   }
 
   // Private methods
+  private initializeStateWithDependencies(initialValues: FormData): FormState {
+    // Initialize base values
+    const baseValues = { ...initialValues };
+
+    // Set select fields to first option if no value provided
+    Object.entries(this.schema.fields).forEach(([fieldName, field]) => {
+      if (
+        field.type === "select" &&
+        field.options?.length &&
+        !baseValues[fieldName]
+      ) {
+        baseValues[fieldName] = field.options[0].value;
+      }
+    });
+
+    // Evaluate and collect all effects
+    const allEffects = this.evaluateAllDependencies(baseValues);
+
+    // Apply all effects to create final state
+    const finalState = this.applyEffectsToState(baseValues, allEffects);
+
+    return finalState;
+  }
 
   private async loadReferences(): Promise<void> {
     if (!this.referenceLoader) return;
@@ -329,12 +396,108 @@ export class FormStore {
     return this.referenceLoading[field] || false;
   }
 
+  private initializeDependencies(initialValues: FormData): FormData {
+    const newValues = { ...initialValues };
+
+    // Get all fields with dependencies
+    Object.entries(this.schema.fields).forEach(([fieldName, field]) => {
+      if (field.dependencies) {
+        // Evaluate dependencies for each field
+        const effects = this.dependencyHandler.evaluateDependencies(
+          fieldName,
+          newValues
+        );
+
+        // Apply effects to the initial values
+        effects.forEach((effect, targetField) => {
+          if (effect.setValue !== undefined) {
+            newValues[targetField] = effect.setValue;
+          }
+          if (effect.hide !== undefined) {
+            this.schema.fields[targetField]!.hidden = effect.hide;
+          }
+          if (effect.disable !== undefined) {
+            this.schema.fields[targetField]!.readOnly = effect.disable;
+          }
+        });
+      }
+    });
+
+    return newValues;
+  }
+  private evaluateAllDependencies(values: FormData): Map<string, FieldEffect> {
+    const allEffects = new Map<string, FieldEffect>();
+
+    // Evaluate dependencies for each field
+    Object.keys(this.schema.fields).forEach((fieldName) => {
+      const effects = this.dependencyHandler.evaluateDependencies(
+        fieldName,
+        values
+      );
+      effects.forEach((effect, targetField) => {
+        allEffects.set(targetField, {
+          ...(allEffects.get(targetField) || {}),
+          ...effect,
+        });
+      });
+    });
+
+    return allEffects;
+  }
+
   private initializeValues(initialValues: FormData): FormData {
     const values: FormData = {};
     Object.entries(this.schema.fields).forEach(([field, definition]) => {
       values[field] = initialValues[field] ?? definition.defaultValue ?? null;
     });
     return values;
+  }
+  private applyEffectsToState(
+    values: FormData,
+    effects: Map<string, FieldEffect>
+  ): FormState {
+    const newValues = { ...values };
+
+    // Apply all effects
+    effects.forEach((effect, fieldName) => {
+      // Apply value effects
+      if (effect.setValue !== undefined) {
+        newValues[fieldName] = effect.setValue;
+      }
+      if (effect.clearValue) {
+        newValues[fieldName] = null;
+      }
+
+      // Apply schema modifications
+      if (effect.hide !== undefined) {
+        this.schema.fields[fieldName].hidden = effect.hide;
+      }
+      if (effect.disable !== undefined) {
+        this.schema.fields[fieldName].readOnly = effect.disable;
+      }
+      if (effect.setValidation) {
+        this.schema.fields[fieldName].validation = {
+          ...this.schema.fields[fieldName].validation,
+          ...effect.setValidation,
+        };
+      }
+      if (effect.setOptions) {
+        this.schema.fields[fieldName].options = effect.setOptions;
+      }
+      if (effect.setOptionGroups) {
+        this.schema.fields[fieldName].optionGroups = effect.setOptionGroups;
+      }
+    });
+
+    return {
+      values: newValues,
+      errors: {},
+      touched: {},
+      dirty: false,
+      valid: true,
+      validating: false,
+      submitting: false,
+    };
   }
 
   private setupValidators(): void {

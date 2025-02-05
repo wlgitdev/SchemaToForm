@@ -1,6 +1,6 @@
 import React, { FC, JSX, ReactElement } from 'react';
-import { FormProvider, useFormSubmit } from './FormContext';
-import { UISchema, UIFieldDefinition, FormTheme } from '../types';
+import { FormProvider, useForm, useFormSubmit } from './FormContext';
+import { UISchema, UIFieldDefinition, FormTheme, FieldEffect } from '../types';
 import { FormData } from '../FormStore';
 import {
   InputField,
@@ -10,6 +10,7 @@ import {
 } from './FormFields';
 import { FormSection, GridContainer } from './FormLayout';
 import { ThemeProvider, useFormTheme } from '../contexts/ThemeContext';
+import { DependencyHandler } from '../DependencyHandler';
 
 interface DynamicFormProps {
   schema: UISchema;
@@ -35,11 +36,15 @@ const FieldRenderer: React.FC<{
 }> = ({ name, field, disabled }) => {
   const theme = useFormTheme();
 
+  if (field.hidden) {
+    return null;
+  }
+
   const commonProps = {
     name,
     label: field.label,
     disabled: disabled || field.readOnly,
-    className: field.hidden ? "hidden" : theme.field.container,
+    className: theme.field.container,
     labelClassName: theme.field.label,
     inputClassName: theme.field.input,
   };
@@ -100,14 +105,70 @@ const FormFields: React.FC<{
   schema: UISchema;
   disabled?: boolean;
 }> = ({ schema, disabled }) => {
+  const { state } = useForm();
+  const [effectsCache, setEffectsCache] = React.useState<Map<string, FieldEffect>>(new Map());
+  
+  // Initialize dependency handler
+  const dependencyHandler = React.useMemo(
+    () => new DependencyHandler(schema.fields),
+    [schema]
+  );
+
+  // Evaluate all field dependencies and cache the results
+  React.useEffect(() => {
+    const newEffects = new Map<string, FieldEffect>();
+    
+    // Evaluate dependencies for all fields
+    Object.keys(schema.fields).forEach(fieldName => {
+      const fieldEffects = dependencyHandler.evaluateDependencies(fieldName, state.values);
+      fieldEffects.forEach((effect, targetField) => {
+        newEffects.set(targetField, effect);
+      });
+    });
+
+    setEffectsCache(newEffects);
+  }, [schema, state.values, dependencyHandler]);
+
   const renderFields = (fields: string[]) => {
     return fields.map(fieldName => {
       const field = schema.fields[fieldName];
       if (!field) return null;
 
+      // Get any effects that apply to this field
+      const fieldEffect = effectsCache.get(fieldName);
+
+      // Check if field should be hidden based on dependency effects
+      if (fieldEffect?.hide) {
+        return null;
+      }
+
+      // Handle options and optionGroups separately
+      let fieldOptions = field.options;
+      if (fieldEffect?.setOptions) {
+        fieldOptions = fieldEffect.setOptions;
+      } else if (fieldEffect?.setOptionGroups) {
+        fieldOptions = fieldEffect.setOptionGroups.flatMap(
+          (group) => group.options
+        );
+      }
+
+      const modifiedField: UIFieldDefinition = {
+        ...field,
+        readOnly: fieldEffect?.disable || field.readOnly,
+        validation: fieldEffect?.setValidation
+          ? { ...field.validation, ...fieldEffect.setValidation }
+          : field.validation,
+        options: fieldOptions,
+        optionGroups: fieldEffect?.setOptionGroups || field.optionGroups,
+      };
+
       return (
         <div key={fieldName} className="w-full">
-          <FieldRenderer name={fieldName} field={field} disabled={disabled} />
+          <FieldRenderer 
+            name={fieldName} 
+            field={modifiedField} 
+            disabled={disabled || modifiedField.readOnly} 
+          />
         </div>
       );
     });
