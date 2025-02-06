@@ -8,8 +8,7 @@ export * from "./components/FormLayout";
 export * from "./contexts/ThemeContext";
 
 // Core Types
-export * from "./types/schemaUI";
-export * from "./types/theme";
+export * from "./types";
 
 // Store and State Management
 export * from "./FieldStore";

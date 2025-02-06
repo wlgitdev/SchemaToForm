@@ -7,6 +7,8 @@ export interface FormTheme {
   field: {
     container: string;
     label: string;
+    required: string;
+    labelGroup: string;
     input: string;
     select: string;
     checkbox: {
@@ -40,52 +42,3 @@ export interface FormTheme {
     item: string;
   };
 }
-
-// Default theme with Tailwind classes
-export const defaultTheme: FormTheme = {
-  form: {
-    container: "",
-    fieldsContainer: "space-y-6",
-    submitContainer: "mt-6 flex justify-end",
-  },
-  field: {
-    container: "w-full",
-    label: "block text-sm font-medium text-gray-700 mb-1",
-    input:
-      "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500",
-    select:
-      "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500",
-    checkbox: {
-      container: "flex items-center",
-      input:
-        "h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500",
-      label: "ml-2 block text-sm text-gray-900",
-    },
-    multiselect:
-      "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500",
-    error: "text-red-600 text-sm mt-1",
-  },
-  section: {
-    container: "border rounded-lg p-4 mb-4",
-    header: "flex items-center justify-between mb-4",
-    title: "text-lg font-medium text-gray-900",
-    content: "space-y-4",
-    collapsible: {
-      container: "mb-6 border rounded-lg overflow-hidden bg-white",
-      button:
-        "w-full flex items-center justify-between text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors duration-150 ease-in-out border-b",
-      icon: "w-4 h-4 transform transition-transform",
-      iconOpen: "rotate-180",
-      content: "bg-white px-4 py-4 border-gray-100",
-    },
-  },
-  button: {
-    base: "px-4 py-2 rounded-md text-white font-medium transition-colors duration-200",
-    primary: "bg-blue-600 hover:bg-blue-700",
-    disabled: "bg-gray-300 cursor-not-allowed",
-  },
-  grid: {
-    container: "grid gap-4 md:grid-cols-2",
-    item: "w-full",
-  },
-};

@@ -1,5 +1,42 @@
 import React, { useCallback } from 'react';
-import { useField, useForm } from '../';
+import { useField, useForm, useFormTheme } from '../';
+
+interface FieldWrapperProps extends BaseFieldProps {
+  error?: string | null;
+  touched?: boolean;
+  children: React.ReactNode;
+  required?: boolean;
+}
+
+interface FieldLabelProps {
+  name: string;
+  label: string;
+  required?: boolean;
+  className?: string;
+}
+
+const FieldLabel: React.FC<FieldLabelProps> = ({
+  name,
+  label,
+  required,
+  className,
+}) => {
+  const theme = useFormTheme();
+
+  return (
+    <div className={theme.field.labelGroup}>
+      <label htmlFor={name} className={className || theme.field.label}>
+      {label}
+      </label>
+      {required && (
+        <span className={theme.field.required} aria-hidden="true">
+          *
+        </span>
+      )}
+    </div>
+  );
+};
+
 
 interface BaseFieldProps {
   name: string;
@@ -8,12 +45,7 @@ interface BaseFieldProps {
   className?: string;
   labelClassName?: string;
   inputClassName?: string;
-}
-
-interface FieldWrapperProps extends BaseFieldProps {
-  error?: string | null;
-  touched?: boolean;
-  children: React.ReactNode;
+  required?: boolean;
 }
 
 const FieldWrapper: React.FC<FieldWrapperProps> = ({
@@ -22,22 +54,27 @@ const FieldWrapper: React.FC<FieldWrapperProps> = ({
   error,
   touched,
   children,
-  className = ''
-}) => (
-  <div className={`field-wrapper ${className}`}>
-    {label && (
-      <label htmlFor={name} className="block text-sm font-medium text-gray-700">
-        {label}
-      </label>
-    )}
-    {children}
-    {touched && error && (
-      <p className="mt-1 text-sm text-red-600" id={`${name}-error`}>
-        {error}
-      </p>
-    )}
-  </div>
-);
+  className = "",
+  required,
+}) => {
+  const theme = useFormTheme();
+    return (
+      <div className={`field-wrapper ${className}`}>
+      <FieldLabel
+        name={name}
+        label={label}
+        required={required}
+        className={theme.field.label}
+      />
+      {children}
+      {touched && error && (
+        <p className={theme.field.error} id={`${name}-error`}>
+          {error}
+        </p>
+      )}
+    </div>
+    )
+};
 
 // Input Field
 export interface InputFieldProps extends BaseFieldProps {
@@ -51,9 +88,12 @@ export const InputField: React.FC<InputFieldProps> = ({
   type = 'text',
   placeholder,
   className = '',
-  disabled = false
+  disabled = false,
+  required,
+  inputClassName
 }) => {
   const { value, error, touched, setValue } = useField(name);
+  const theme = useFormTheme();
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,6 +111,7 @@ export const InputField: React.FC<InputFieldProps> = ({
       error={error}
       touched={touched}
       className={className}
+      required={required}
     >
       <input
         id={name}
@@ -80,10 +121,8 @@ export const InputField: React.FC<InputFieldProps> = ({
         onChange={handleChange}
         placeholder={placeholder}
         disabled={disabled}
-        className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm
-          focus:border-blue-500 focus:ring-blue-500 sm:text-sm
-          ${error ? 'border-red-300' : 'border-gray-300'}
-          ${disabled ? 'bg-gray-100' : ''}`}
+        className={inputClassName || theme.field.input}
+        aria-required={required}
       />
     </FieldWrapper>
   );
@@ -107,10 +146,13 @@ export const SelectField: React.FC<SelectFieldProps> = ({
   options,
   placeholder,
   className = '',
-  disabled = false
+  disabled = false,
+  required,
+  selectClassName
 }) => {
   const { value, error, touched, setValue } = useField(name);
   const { getReferenceData, isReferenceLoading } = useForm();
+  const theme = useFormTheme();
 
   const referenceData = getReferenceData(name);
   const loading = isReferenceLoading(name);
@@ -140,6 +182,7 @@ export const SelectField: React.FC<SelectFieldProps> = ({
       error={error}
       touched={touched}
       className={className}
+      required={required}
     >
       <select
         id={name}
@@ -147,10 +190,8 @@ export const SelectField: React.FC<SelectFieldProps> = ({
         value={value as string}
         onChange={handleChange}
         disabled={disabled}
-        className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm
-          focus:border-blue-500 focus:ring-blue-500 sm:text-sm
-          ${error ? "border-red-300" : "border-gray-300"}
-          ${disabled ? "bg-gray-100" : ""}`}
+        className={selectClassName || theme.field.select}
+        aria-required={required}
       >
         {placeholder && (
           <option value="" disabled>

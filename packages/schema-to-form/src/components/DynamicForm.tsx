@@ -54,6 +54,7 @@ const FieldRenderer: React.FC<{
     className: theme.field.container,
     labelClassName: theme.field.label,
     inputClassName: theme.field.input,
+    required: field.validation?.required,
   };
 
   switch (field.type) {

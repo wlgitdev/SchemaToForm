@@ -41,6 +41,8 @@ const customTheme: Partial<FormTheme> = {
     multiselect:
       "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
     error: "mt-1 text-sm text-red-600",
+    required: "text-red-600 ml-1 font-medium",
+    labelGroup: "flex items-center gap-1",
   },
   grid: {
     container: "grid gap-4 md:grid-cols-2",
