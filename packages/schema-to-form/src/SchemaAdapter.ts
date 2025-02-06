@@ -1,4 +1,4 @@
-import { UISchema, UIFieldDefinition, UIFieldType } from "./types";
+import { UISchema, UIFieldDefinition, UIFieldType } from "./";
 
 export interface AdapterOptions {
   excludeFields?: string[];

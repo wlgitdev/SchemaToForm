@@ -1,5 +1,4 @@
-import { DependencyHandler } from "./DependencyHandler";
-import { UISchema, UIFieldDefinition, FieldEffect } from "./types";
+import { DependencyHandler, UISchema, UIFieldDefinition, FieldEffect } from "./";
 
 // FormStore.ts
 export type FieldValue =
@@ -28,7 +27,7 @@ export interface FormState {
 }
 
 export type FormSubscriber = (state: FormState) => void;
-export type FieldSubscriber = (value: FieldValue, error: FieldError) => void;
+export type FormFieldSubscriber = (value: FieldValue, error: FieldError) => void;
 
 export interface FormValidator {
   (values: FormData): Promise<FormErrors>;
@@ -42,7 +41,7 @@ export class FormStore {
   private state: FormState;
   private schema: UISchema;
   private formSubscribers: Set<FormSubscriber>;
-  private fieldSubscribers: Map<string, Set<FieldSubscriber>>;
+  private fieldSubscribers: Map<string, Set<FormFieldSubscriber>>;
   private fieldValidators: Map<string, FieldValidator>;
   private formValidator?: FormValidator;
   private validationTimeout: number = 200;
@@ -155,7 +154,7 @@ export class FormStore {
   /**
    * Subscribe to specific field changes
    */
-  subscribeToField(field: string, subscriber: FieldSubscriber): () => void {
+  subscribeToField(field: string, subscriber: FormFieldSubscriber): () => void {
     if (!this.fieldSubscribers.has(field)) {
       this.fieldSubscribers.set(field, new Set());
     }

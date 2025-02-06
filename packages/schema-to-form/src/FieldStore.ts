@@ -1,6 +1,4 @@
-import { UIFieldDefinition } from './types';
-import { FieldValue } from './FormStore';
-import { FieldTransformer } from './fieldTransformers';
+import { UIFieldDefinition, FieldValue, FieldTransformer } from "./";
 
 export interface FieldState {
   value: FieldValue;

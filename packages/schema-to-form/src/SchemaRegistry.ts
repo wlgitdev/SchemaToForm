@@ -1,4 +1,4 @@
-import { UISchema } from "./types";
+import { UISchema } from "./";
 
 export type SchemaValidator = (
   schema: UISchema
@@ -83,7 +83,7 @@ export class SchemaRegistry {
     // Validate schema
     const validationResults = this.validateSchema(schema);
     if (!validationResults.valid) {
-      throw new Error(`Invalid schema: ${validationResults.errors.join(', ')}`);
+      throw new Error(`Invalid schema: ${validationResults.errors.join(", ")}`);
     }
 
     // Transform schema
@@ -93,7 +93,7 @@ export class SchemaRegistry {
     this.schemas.set(name, {
       schema: transformedSchema,
       timestamp: Date.now(),
-      version: 1
+      version: 1,
     });
   }
 
@@ -120,7 +120,7 @@ export class SchemaRegistry {
 
     const validationResults = this.validateSchema(schema);
     if (!validationResults.valid) {
-      throw new Error(`Invalid schema: ${validationResults.errors.join(', ')}`);
+      throw new Error(`Invalid schema: ${validationResults.errors.join(", ")}`);
     }
 
     const transformedSchema = this.transformSchema(schema);
@@ -128,7 +128,7 @@ export class SchemaRegistry {
     this.schemas.set(name, {
       schema: transformedSchema,
       timestamp: Date.now(),
-      version: existing.version + 1
+      version: existing.version + 1,
     });
   }
 
@@ -155,7 +155,7 @@ export class SchemaRegistry {
 
     return {
       timestamp: cached.timestamp,
-      version: cached.version
+      version: cached.version,
     };
   }
 
@@ -191,9 +191,9 @@ export class SchemaRegistry {
 
     for (const validator of this.validators) {
       const result = validator(schema);
-      if (typeof result === 'boolean') {
+      if (typeof result === "boolean") {
         if (!result) {
-          errors.push('Schema validation failed');
+          errors.push("Schema validation failed");
         }
       } else {
         if (!result.valid) {
@@ -204,7 +204,7 @@ export class SchemaRegistry {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 

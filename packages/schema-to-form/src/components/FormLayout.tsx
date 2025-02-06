@@ -1,5 +1,5 @@
-import { useFormTheme } from "../contexts/ThemeContext";
-import React, { useState } from "react";
+import { useFormTheme } from "../";
+import React from "react";
 
 interface CollapsibleSectionProps {
   title: string;

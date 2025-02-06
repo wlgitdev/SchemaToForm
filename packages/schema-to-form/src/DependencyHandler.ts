@@ -3,8 +3,8 @@ import {
   DependencyOperator,
   FieldEffect,
   UIFieldDefinition,
-} from "./types";
-import { FormData } from "./FormStore";
+  FormData,
+} from "./index";
 
 export class DependencyHandler {
   private dependencyGraph: Map<string, Set<string>> = new Map();

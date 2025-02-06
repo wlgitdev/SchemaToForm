@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { FormData } from "@schematoform/schema-to-form/FormStore";
+import { FormData } from "@schematoform/schema-to-form";
 import { Modal } from "./Modal";
 import TestForm from "./TestForm";
 

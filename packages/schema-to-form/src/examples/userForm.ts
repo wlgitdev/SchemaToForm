@@ -1,6 +1,4 @@
-import { SchemaRegistry } from "../SchemaRegistry";
-import { basicSchemaValidator, defaultValueTransformer, labelTransformer } from "../schemaValidators";
-import { UISchema } from "../types";
+import { SchemaRegistry, basicSchemaValidator, defaultValueTransformer, labelTransformer, UISchema } from "../";
 
 export const userFormSchema: UISchema = {
   fields: {

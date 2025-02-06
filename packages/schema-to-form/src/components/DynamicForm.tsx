@@ -1,16 +1,23 @@
-import React, { FC, JSX, ReactElement } from 'react';
-import { FormProvider, useForm, useFormSubmit } from './FormContext';
-import { UISchema, UIFieldDefinition, FormTheme, FieldEffect } from '../types';
-import { FormData } from '../FormStore';
+import React, { JSX } from "react";
 import {
+  FormProvider,
+  useForm,
+  useFormSubmit,
+  UISchema,
+  UIFieldDefinition,
+  FormTheme,
+  FieldEffect,
+  FormData,
   InputField,
   SelectField,
   CheckboxField,
-  MultiSelectField
-} from './FormFields';
-import { FormSection, GridContainer } from './FormLayout';
-import { ThemeProvider, useFormTheme } from '../contexts/ThemeContext';
-import { DependencyHandler } from '../DependencyHandler';
+  MultiSelectField,
+  FormSection,
+  GridContainer,
+  useFormTheme,
+  DependencyHandler,
+  ThemeProvider,
+} from "../";
 
 interface DynamicFormProps {
   schema: UISchema;
@@ -106,8 +113,10 @@ const FormFields: React.FC<{
   disabled?: boolean;
 }> = ({ schema, disabled }) => {
   const { state } = useForm();
-  const [effectsCache, setEffectsCache] = React.useState<Map<string, FieldEffect>>(new Map());
-  
+  const [effectsCache, setEffectsCache] = React.useState<
+    Map<string, FieldEffect>
+  >(new Map());
+
   // Initialize dependency handler
   const dependencyHandler = React.useMemo(
     () => new DependencyHandler(schema.fields),
@@ -117,10 +126,13 @@ const FormFields: React.FC<{
   // Evaluate all field dependencies and cache the results
   React.useEffect(() => {
     const newEffects = new Map<string, FieldEffect>();
-    
+
     // Evaluate dependencies for all fields
-    Object.keys(schema.fields).forEach(fieldName => {
-      const fieldEffects = dependencyHandler.evaluateDependencies(fieldName, state.values);
+    Object.keys(schema.fields).forEach((fieldName) => {
+      const fieldEffects = dependencyHandler.evaluateDependencies(
+        fieldName,
+        state.values
+      );
       fieldEffects.forEach((effect, targetField) => {
         newEffects.set(targetField, effect);
       });
@@ -130,7 +142,7 @@ const FormFields: React.FC<{
   }, [schema, state.values, dependencyHandler]);
 
   const renderFields = (fields: string[]) => {
-    return fields.map(fieldName => {
+    return fields.map((fieldName) => {
       const field = schema.fields[fieldName];
       if (!field) return null;
 
@@ -164,10 +176,10 @@ const FormFields: React.FC<{
 
       return (
         <div key={fieldName} className="w-full">
-          <FieldRenderer 
-            name={fieldName} 
-            field={modifiedField} 
-            disabled={disabled || modifiedField.readOnly} 
+          <FieldRenderer
+            name={fieldName}
+            field={modifiedField}
+            disabled={disabled || modifiedField.readOnly}
           />
         </div>
       );
@@ -185,7 +197,7 @@ const FormFields: React.FC<{
             collapsible={group.collapsible}
             defaultOpen={true}
           >
-              {renderFields(group.fields)}
+            {renderFields(group.fields)}
           </FormSection>
         ))}
       </>
@@ -194,9 +206,7 @@ const FormFields: React.FC<{
 
   // If no groups are defined, use a single responsive grid
   return (
-    <GridContainer>
-      {renderFields(Object.keys(schema.fields))}
-    </GridContainer>
+    <GridContainer>{renderFields(Object.keys(schema.fields))}</GridContainer>
   );
 };
 
@@ -274,7 +284,7 @@ export const DynamicForm = ({
 // Export a helper to create forms with specific configurations
 export const createForm = (
   schema: UISchema,
-  config?: Omit<DynamicFormProps, 'schema'>
+  config?: Omit<DynamicFormProps, "schema">
 ) => {
   return (props: Omit<DynamicFormProps, "schema">): JSX.Element => (
     <DynamicForm schema={schema} {...config} {...props} />

@@ -1,5 +1,5 @@
-import { UIFieldDefinition } from "./types";
-import { FieldValue } from "./FormStore";
+import { UIFieldDefinition,
+          FieldValue } from "./index";
 
 export interface TransformerConfig {
   toDisplay: (value: FieldValue) => any;

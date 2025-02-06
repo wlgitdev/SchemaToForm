@@ -1,5 +1,5 @@
-import { defaultTheme, FormTheme } from "../types";
 import React, { createContext, useContext } from "react";
+import { defaultTheme, FormTheme } from "../";
 
 const ThemeContext = createContext<FormTheme>(defaultTheme);
 

@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { useField, useForm } from './FormContext';
+import { useField, useForm } from '../';
 
 interface BaseFieldProps {
   name: string;
