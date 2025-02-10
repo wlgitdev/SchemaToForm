@@ -447,7 +447,27 @@ export class FormStore {
   private initializeValues(initialValues: FormData): FormData {
     const values: FormData = {};
     Object.entries(this.schema.fields).forEach(([field, definition]) => {
-      values[field] = initialValues[field] ?? definition.defaultValue ?? null;
+      const defaultValue = (() => {
+        switch (definition.type) {
+          case "text":
+          case "select":
+            return "";
+          case "number":
+            return 0;
+          case "date":
+            return "";
+          case "checkbox":
+            return false;
+          case "multiselect":
+          case "list":
+            return [];
+          default:
+            return "";
+        }
+      })();
+
+      values[field] =
+        initialValues[field] ?? definition.defaultValue ?? defaultValue;
     });
     return values;
   }

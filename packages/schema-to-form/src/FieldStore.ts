@@ -72,7 +72,7 @@ export class FieldStore {
   getValue(): FieldValue {
     return this.transformer.toDisplay(this.state.value);
   }
-  
+
   /**
    * Set field error
    */
@@ -182,14 +182,14 @@ export class FieldStore {
       case "checkbox":
         return false;
       case "date":
-        return null;
+        return "";
       case "select":
         return "";
       case "multiselect":
       case "list":
         return [];
       default:
-        return null;
+        return "";
     }
   }
 

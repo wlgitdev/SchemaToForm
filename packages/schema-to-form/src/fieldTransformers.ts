@@ -77,23 +77,37 @@ export class FieldTransformer {
 
   private defaultToDisplay(value: FieldValue): any {
     if (value === null || value === undefined) {
-      return this.getDefaultDisplayValue();
+      switch (this.definition.type) {
+        case "text":
+        case "select":
+        case "date":
+          return "";
+        case "number":
+          return 0;
+        case "checkbox":
+          return false;
+        case "multiselect":
+        case "list":
+          return [];
+        default:
+          return "";
+      }
     }
 
     switch (this.definition.type) {
       case "date":
         return value instanceof Date
           ? value.toISOString().split("T")[0]
-          : String(value);
+          : String(value || "");
       case "number":
-        return Number(value);
+        return Number(value || 0);
       case "multiselect":
       case "list":
-        return Array.isArray(value) ? value : [String(value)];
+        return Array.isArray(value) ? value : [];
       case "checkbox":
         return Boolean(value);
       default:
-        return String(value);
+        return String(value || "");
     }
   }
 
