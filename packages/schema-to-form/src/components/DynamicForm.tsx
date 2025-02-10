@@ -19,23 +19,6 @@ import {
   ThemeProvider,
 } from "../";
 
-interface DynamicFormProps {
-  schema: UISchema;
-  initialValues?: FormData;
-  onSubmit?: (values: FormData) => Promise<void>;
-  submitLabel?: string;
-  loading?: boolean;
-  className?: string;
-}
-
-interface FormContentProps {
-  schema: UISchema;
-  submitLabel: string;
-  loading: boolean;
-  className?: string;
-  onSubmit?: (values: FormData) => Promise<void>;
-}
-
 const FieldRenderer: React.FC<{
   name: string;
   field: UIFieldDefinition;
@@ -108,6 +91,8 @@ const FieldRenderer: React.FC<{
       );
   }
 };
+
+
 
 const FormFields: React.FC<{
   schema: UISchema;
@@ -211,6 +196,68 @@ const FormFields: React.FC<{
   );
 };
 
+interface FormContentProps {
+  schema: UISchema;
+  submitLabel: string;
+  loading: boolean;
+  className?: string;
+  onSubmit?: (values: FormData) => Promise<void>;
+}
+
+const FormContent: React.FC<FormContentProps> = ({
+  schema,
+  submitLabel,
+  loading,
+  className,
+  onSubmit,
+}) => {
+  const { handleSubmit, isValid, isSubmitting, isDirty } =
+    useFormSubmit(onSubmit);
+  const theme = useFormTheme();
+
+  const formDisabled = loading || isSubmitting;
+  const buttonClassName = `
+    ${theme.button?.base || ""}
+    ${
+      formDisabled || !isValid || !isDirty
+        ? theme.button?.disabled || ""
+        : theme.button?.primary || ""
+    }
+  `;
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className={`${theme.form?.container || ""} ${className || ""}`}
+    >
+      <div className={theme.form?.fieldsContainer || ""}>
+        <FormFields schema={schema} disabled={formDisabled} />
+      </div>
+
+      <div className={theme.form?.submitContainer || ""}>
+        <button
+          type="submit"
+          disabled={formDisabled || !isValid || !isDirty}
+          className={buttonClassName}
+        >
+          {isSubmitting ? "Submitting..." : submitLabel}
+        </button>
+      </div>
+    </form>
+  );
+};
+
+
+
+interface DynamicFormProps {
+  schema: UISchema;
+  initialValues?: FormData;
+  onSubmit?: (values: FormData) => Promise<void>;
+  submitLabel?: string;
+  loading?: boolean;
+  className?: string;
+}
+
 export const DynamicForm = ({
   schema,
   initialValues,
@@ -220,49 +267,6 @@ export const DynamicForm = ({
   className = "",
   theme,
 }: DynamicFormProps & { theme?: Partial<FormTheme> }): JSX.Element => {
-  const FormContent: React.FC<FormContentProps> = ({
-    schema,
-    submitLabel,
-    loading,
-    className,
-    onSubmit,
-  }) => {
-    const { handleSubmit, isValid, isSubmitting, isDirty } =
-      useFormSubmit(onSubmit);
-    const theme = useFormTheme();
-
-    const disabled = loading || isSubmitting;
-    const buttonClassName = `
-    ${theme.button?.base || ""}
-    ${
-      disabled || !isValid || !isDirty
-        ? theme.button?.disabled || ""
-        : theme.button?.primary || ""
-    }
-  `;
-
-    return (
-      <form
-        onSubmit={handleSubmit}
-        className={`${theme.form?.container || ""} ${className || ""}`}
-      >
-        <div className={theme.form?.fieldsContainer || ""}>
-          <FormFields schema={schema} disabled={disabled} />
-        </div>
-
-        <div className={theme.form?.submitContainer || ""}>
-          <button
-            type="submit"
-            disabled={disabled || !isValid || !isDirty}
-            className={buttonClassName}
-          >
-            {isSubmitting ? "Submitting..." : submitLabel}
-          </button>
-        </div>
-      </form>
-    );
-  };
-
   return (
     <ThemeProvider theme={theme}>
       <FormProvider
@@ -279,15 +283,5 @@ export const DynamicForm = ({
         />
       </FormProvider>
     </ThemeProvider>
-  );
-};
-
-// Export a helper to create forms with specific configurations
-export const createForm = (
-  schema: UISchema,
-  config?: Omit<DynamicFormProps, "schema">
-) => {
-  return (props: Omit<DynamicFormProps, "schema">): JSX.Element => (
-    <DynamicForm schema={schema} {...config} {...props} />
   );
 };

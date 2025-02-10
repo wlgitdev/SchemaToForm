@@ -512,11 +512,34 @@ export class FormStore {
       const validation = fieldDef.validation;
       if (!validation) return null;
 
-      if (validation.required && !value) {
-        return `${fieldDef.label} is required`;
+      // Type-specific required validation
+      if (validation.required) {
+        const isValueEmpty = (() => {
+          switch (fieldDef.type) {
+            case "text":
+            case "select":
+              return value === null || value === undefined || value.toString().trim() === "";
+            case "number":
+              return (
+                value === null || value === undefined || Number.isNaN(value)
+              );
+            case "date":
+            case "checkbox":
+              return value === null || value === undefined;
+            case "list":
+            case "multiselect":
+              return !Array.isArray(value) || value.length === 0;
+            default:
+              return value === null || value === undefined;
+          }
+        })();
+
+        if (isValueEmpty) {
+          return `${fieldDef.label} is required`;
+        }
       }
 
-      if (value) {
+      if (value !== null && value !== undefined) {
         if (typeof value === "string") {
           if (validation.minLength && value.length < validation.minLength) {
             return `${fieldDef.label} must be at least ${validation.minLength} characters`;
