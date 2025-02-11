@@ -104,6 +104,28 @@ export const testSchema: UISchema = {
         {
           field: "recurInterval",
           operator: "equals",
+          value: "Daily",
+          effect: {
+            hide: false,
+            setOptionGroups: [
+              {
+                label: "Days of Week",
+                options: [
+                  { value: 16, label: "Monday" },
+                  { value: 32, label: "Tuesday" },
+                  { value: 64, label: "Wednesday" },
+                  { value: 128, label: "Thursday" },
+                  { value: 256, label: "Friday" },
+                  { value: 512, label: "Saturday" },
+                  { value: 1024, label: "Sunday" },
+                ],
+              },
+            ],
+          },
+        },
+        {
+          field: "recurInterval",
+          operator: "equals",
           value: "Monthly",
           effect: {
             hide: false,

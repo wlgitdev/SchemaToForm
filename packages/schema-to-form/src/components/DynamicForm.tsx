@@ -79,6 +79,7 @@ const FieldRenderer: React.FC<{
           options={field.options || []}
           placeholder={field.placeholder}
           selectClassName={theme.field.multiselect}
+          field={field}
         />
       );
 

@@ -1,5 +1,5 @@
-import React, { useCallback } from 'react';
-import { useField, useForm, useFormTheme } from '../';
+import React, { useCallback, useMemo } from 'react';
+import { FieldTransformer, UIFieldDefinition, useField, useForm, useFormTheme } from '../';
 
 interface FieldWrapperProps extends BaseFieldProps {
   error?: string | null;
@@ -316,6 +316,7 @@ export const RadioGroupField: React.FC<RadioGroupFieldProps> = ({
 interface MultiSelectFieldProps extends SelectFieldProps {
   options: SelectOption[];
   placeholder?: string;
+  field: UIFieldDefinition;
 }
 
 export const MultiSelectField: React.FC<MultiSelectFieldProps> = ({
@@ -323,19 +324,27 @@ export const MultiSelectField: React.FC<MultiSelectFieldProps> = ({
   label,
   options,
   placeholder,
-  className = '',
-  disabled = false
+  className = "",
+  disabled = false,
+  field,
 }) => {
   const { value, touched, setValue } = useField(name);
+
+  const transformer = useMemo(() => new FieldTransformer(field), [field]);
+
+  const displayValue = useMemo(
+    () => transformer.toDisplay(value),
+    [transformer, value]
+  );
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const selectedOptions = Array.from(e.target.selectedOptions).map(
-        option => option.value
+        (option) => option.value
       );
-      setValue(selectedOptions);
+      setValue(transformer.fromDisplay(selectedOptions));
     },
-    [setValue]
+    [setValue, transformer]
   );
 
   return (
@@ -349,7 +358,7 @@ export const MultiSelectField: React.FC<MultiSelectFieldProps> = ({
         id={name}
         name={name}
         multiple
-        value={value as string[]}
+        value={displayValue}
         onChange={handleChange}
         disabled={disabled}
         className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm
