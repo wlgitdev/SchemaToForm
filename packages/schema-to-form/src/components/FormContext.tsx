@@ -67,7 +67,6 @@ export const useForm = () => {
 export const useField = (name: string) => {
   const { state, setFieldValue } = useForm();
   const value = state.values[name];
-  const error = state.errors[name];
   const touched = state.touched[name];
 
   const setValue = async (newValue: FieldValue) => {
@@ -76,7 +75,6 @@ export const useField = (name: string) => {
 
   return {
     value,
-    error,
     touched,
     setValue
   };

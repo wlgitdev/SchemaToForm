@@ -92,7 +92,7 @@ export const InputField: React.FC<InputFieldProps> = ({
   required,
   inputClassName
 }) => {
-  const { value, error, touched, setValue } = useField(name);
+  const { value, touched, setValue } = useField(name);
   const theme = useFormTheme();
 
   const handleChange = useCallback(
@@ -108,7 +108,6 @@ export const InputField: React.FC<InputFieldProps> = ({
     <FieldWrapper
       name={name}
       label={label}
-      error={error}
       touched={touched}
       className={className}
       required={required}
@@ -150,7 +149,7 @@ export const SelectField: React.FC<SelectFieldProps> = ({
   required,
   selectClassName
 }) => {
-  const { value, error, touched, setValue } = useField(name);
+  const { value, touched, setValue } = useField(name);
   const { getReferenceData, isReferenceLoading } = useForm();
   const theme = useFormTheme();
 
@@ -179,7 +178,6 @@ export const SelectField: React.FC<SelectFieldProps> = ({
     <FieldWrapper
       name={name}
       label={label}
-      error={error}
       touched={touched}
       className={className}
       required={required}
@@ -222,7 +220,7 @@ export const CheckboxField: React.FC<CheckboxFieldProps> = ({
   className = '',
   disabled = false
 }) => {
-  const { value, error, touched, setValue } = useField(name);
+  const { value, touched, setValue } = useField(name);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -235,7 +233,6 @@ export const CheckboxField: React.FC<CheckboxFieldProps> = ({
     <FieldWrapper
       name={name}
       label={label}
-      error={error}
       touched={touched}
       className={className}
     >
@@ -272,7 +269,7 @@ export const RadioGroupField: React.FC<RadioGroupFieldProps> = ({
   className = '',
   disabled = false
 }) => {
-  const { value, error, touched, setValue } = useField(name);
+  const { value, touched, setValue } = useField(name);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -285,7 +282,6 @@ export const RadioGroupField: React.FC<RadioGroupFieldProps> = ({
     <FieldWrapper
       name={name}
       label={label}
-      error={error}
       touched={touched}
       className={className}
     >
@@ -330,7 +326,7 @@ export const MultiSelectField: React.FC<MultiSelectFieldProps> = ({
   className = '',
   disabled = false
 }) => {
-  const { value, error, touched, setValue } = useField(name);
+  const { value, touched, setValue } = useField(name);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -346,7 +342,6 @@ export const MultiSelectField: React.FC<MultiSelectFieldProps> = ({
     <FieldWrapper
       name={name}
       label={label}
-      error={error}
       touched={touched}
       className={className}
     >
@@ -359,7 +354,6 @@ export const MultiSelectField: React.FC<MultiSelectFieldProps> = ({
         disabled={disabled}
         className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm
           focus:border-blue-500 focus:ring-blue-500 sm:text-sm
-          ${error ? "border-red-300" : "border-gray-300"}
           ${disabled ? "bg-gray-100" : ""}`}
       >
         {placeholder && (

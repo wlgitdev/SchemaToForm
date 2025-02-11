@@ -12,20 +12,17 @@ export type FieldValue =
   | undefined;
   
 export type FormData = Record<string, FieldValue>;
-export type FieldError = string | null;
-export type FormErrors = Record<string, FieldError>;
 export type TouchedFields = Record<string, boolean>;
 
 export interface FormState {
   values: FormData;
-  errors: FormErrors;
   touched: TouchedFields;
   dirty: boolean;
   submitting: boolean;
 }
 
 export type FormSubscriber = (state: FormState) => void;
-export type FormFieldSubscriber = (value: FieldValue, error: FieldError) => void;
+export type FormFieldSubscriber = (value: FieldValue) => void;
 
 export class FormStore {
   private state: FormState;
@@ -104,7 +101,6 @@ export class FormStore {
     // Initialize state
     this.state = {
       values: baseValues,
-      errors: {},
       touched: {},
       dirty: false,
       submitting: false,
@@ -137,7 +133,7 @@ export class FormStore {
     subscribers.add(subscriber);
 
     // Initial notification
-    subscriber(this.state.values[field], this.state.errors[field] || null);
+    subscriber(this.state.values[field]);
 
     return () => {
       const subscribers = this.fieldSubscribers.get(field);
@@ -199,7 +195,7 @@ export class FormStore {
     const subscribers = this.fieldSubscribers.get(field);
     if (subscribers) {
       subscribers.forEach((subscriber) =>
-        subscriber(value, this.state.errors[field] || null)
+        subscriber(value)
       );
     }
   }
@@ -237,7 +233,6 @@ export class FormStore {
     const newValues = values || this.initializeValues({});
     this.setState({
       values: newValues,
-      errors: {},
       touched: {},
       dirty: false,
       submitting: false,
@@ -432,7 +427,6 @@ export class FormStore {
 
     return {
       values: newValues,
-      errors: {},
       touched: {},
       dirty: false,
       submitting: false,
