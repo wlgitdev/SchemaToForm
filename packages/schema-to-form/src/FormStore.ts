@@ -1,4 +1,4 @@
-import { DependencyHandler, UISchema, UIFieldDefinition, FieldEffect } from "./";
+import { DependencyHandler, UISchema, FieldEffect } from "./";
 
 // FormStore.ts
 export type FieldValue =
@@ -21,32 +21,17 @@ export interface FormState {
   errors: FormErrors;
   touched: TouchedFields;
   dirty: boolean;
-  valid: boolean;
-  validating: boolean;
   submitting: boolean;
 }
 
 export type FormSubscriber = (state: FormState) => void;
 export type FormFieldSubscriber = (value: FieldValue, error: FieldError) => void;
 
-export interface FormValidator {
-  (values: FormData): Promise<FormErrors>;
-}
-
-export interface FieldValidator {
-  (value: FieldValue, values: FormData): Promise<FieldError>;
-}
-
 export class FormStore {
   private state: FormState;
   private schema: UISchema;
   private formSubscribers: Set<FormSubscriber>;
   private fieldSubscribers: Map<string, Set<FormFieldSubscriber>>;
-  private fieldValidators: Map<string, FieldValidator>;
-  private formValidator?: FormValidator;
-  private validationTimeout: number = 200;
-  private validationTimers: Map<string, NodeJS.Timeout>;
-  private pendingValidations: Map<string, Promise<void>>;
   private referenceData: Record<
     string,
     Array<{ value: string; label: string }>
@@ -73,15 +58,10 @@ export class FormStore {
 
     this.formSubscribers = new Set();
     this.fieldSubscribers = new Map();
-    this.fieldValidators = new Map();
-    this.validationTimers = new Map();
-    this.pendingValidations = new Map();
     this.dependencyHandler = new DependencyHandler(schema.fields);
 
     const processedState = this.initializeStateWithDependencies(initialValues);
     this.state = processedState;
-
-    this.setupValidators();
 
     if (referenceLoader) {
       this.loadReferences();
@@ -127,13 +107,8 @@ export class FormStore {
       errors: {},
       touched: {},
       dirty: false,
-      valid: true,
-      validating: false,
       submitting: false,
     };
-
-    // Setup field validators from schema
-    this.setupValidators();
 
     if (referenceLoader) {
       this.loadReferences();
@@ -203,12 +178,6 @@ export class FormStore {
       if (effect.disable !== undefined) {
         this.schema.fields[targetField]!.readOnly = effect.disable;
       }
-      if (effect.setValidation) {
-        this.schema.fields[targetField]!.validation = {
-          ...this.schema.fields[targetField]!.validation,
-          ...effect.setValidation,
-        };
-      }
     });
 
     const newTouched = {
@@ -233,9 +202,6 @@ export class FormStore {
         subscriber(value, this.state.errors[field] || null)
       );
     }
-
-    // Await validation
-    await this.validateField(field, value, newState.values);
   }
 
   /**
@@ -262,8 +228,6 @@ export class FormStore {
       values: newValues,
       dirty: true,
     });
-
-    this.validateForm(newValues);
   }
 
   /**
@@ -276,37 +240,8 @@ export class FormStore {
       errors: {},
       touched: {},
       dirty: false,
-      valid: true,
-      validating: false,
       submitting: false,
     });
-  }
-
-  /**
-   * Set form-level validator
-   */
-
-  async setFormValidator(validator: FormValidator): Promise<void> {
-    this.formValidator = validator;
-    // Validate form immediately when setting validator
-    await this.validateForm(this.state.values);
-  }
-
-  /**
-   * Set field-level validator
-   */
-
-  async setFieldValidator(
-    field: string,
-    validator: FieldValidator
-  ): Promise<void> {
-    this.fieldValidators.set(field, validator);
-    // Validate field immediately when setting validator
-    await this.validateField(
-      field,
-      this.state.values[field],
-      this.state.values
-    );
   }
 
   /**
@@ -314,14 +249,6 @@ export class FormStore {
    */
   getState(): FormState {
     return this.state;
-  }
-
-  /**
-   * Validate entire form
-   */
-  async validate(): Promise<boolean> {
-    const errors = await this.validateForm(this.state.values);
-    return Object.keys(errors).length === 0;
   }
 
   // Private methods
@@ -471,6 +398,7 @@ export class FormStore {
     });
     return values;
   }
+
   private applyEffectsToState(
     values: FormData,
     effects: Map<string, FieldEffect>
@@ -494,12 +422,6 @@ export class FormStore {
       if (effect.disable !== undefined) {
         this.schema.fields[fieldName]!.readOnly = effect.disable;
       }
-      if (effect.setValidation) {
-        this.schema.fields[fieldName]!.validation = {
-          ...this.schema.fields[fieldName]!.validation,
-          ...effect.setValidation,
-        };
-      }
       if (effect.setOptions) {
         this.schema.fields[fieldName]!.options = effect.setOptions;
       }
@@ -513,182 +435,8 @@ export class FormStore {
       errors: {},
       touched: {},
       dirty: false,
-      valid: true,
-      validating: false,
       submitting: false,
     };
-  }
-
-  private setupValidators(): void {
-    Object.entries(this.schema.fields).forEach(([field, definition]) => {
-      if (definition.validation) {
-        this.fieldValidators.set(field, this.createFieldValidator(definition));
-      }
-    });
-  }
-
-  private createFieldValidator(fieldDef: UIFieldDefinition): FieldValidator {
-    return async (value: FieldValue, values: FormData): Promise<FieldError> => {
-      const validation = fieldDef.validation;
-      if (!validation) return null;
-
-      // Type-specific required validation
-      if (validation.required) {
-        const isValueEmpty = (() => {
-          switch (fieldDef.type) {
-            case "text":
-            case "select":
-              return value === null || value === undefined || value.toString().trim() === "";
-            case "number":
-              return (
-                value === null || value === undefined || Number.isNaN(value)
-              );
-            case "date":
-            case "checkbox":
-              return value === null || value === undefined;
-            case "list":
-            case "multiselect":
-              return !Array.isArray(value) || value.length === 0;
-            default:
-              return value === null || value === undefined;
-          }
-        })();
-
-        if (isValueEmpty) {
-          return `${fieldDef.label} is required`;
-        }
-      }
-
-      if (value !== null && value !== undefined) {
-        if (typeof value === "string") {
-          if (validation.minLength && value.length < validation.minLength) {
-            return `${fieldDef.label} must be at least ${validation.minLength} characters`;
-          }
-          if (validation.maxLength && value.length > validation.maxLength) {
-            return `${fieldDef.label} must be at most ${validation.maxLength} characters`;
-          }
-          if (validation.pattern) {
-            const regex = new RegExp(validation.pattern);
-            if (!regex.test(value)) {
-              return (
-                validation.patternMessage ||
-                `${fieldDef.label} format is invalid`
-              );
-            }
-          }
-        }
-
-        if (typeof value === "number") {
-          if (validation.min !== undefined && value < validation.min) {
-            return `${fieldDef.label} must be at least ${validation.min}`;
-          }
-          if (validation.max !== undefined && value > validation.max) {
-            return `${fieldDef.label} must be at most ${validation.max}`;
-          }
-        }
-      }
-
-      if (validation.custom) {
-        const result = await validation.custom(value);
-        if (typeof result === "string") return result;
-        if (result === false) return `${fieldDef.label} is invalid`;
-      }
-
-      return null;
-    };
-  }
-
-  private async validateField(
-    field: string,
-    value: FieldValue,
-    values: FormData
-  ): Promise<void> {
-    const validator = this.fieldValidators.get(field);
-    if (!validator) return;
-
-    // Clear existing timer and pending validation
-    if (this.validationTimers.has(field)) {
-      clearTimeout(this.validationTimers.get(field));
-    }
-
-    // Create new validation promise
-    const validationPromise = new Promise<void>((resolve) => {
-      const timer = setTimeout(async () => {
-        try {
-          this.setState({
-            ...this.state,
-            validating: true,
-          });
-
-          const error = await validator(value, values);
-
-          this.setState({
-            ...this.state,
-            errors: {
-              ...this.state.errors,
-              [field]: error,
-            },
-            validating: false,
-            valid: !error,
-          });
-
-          // Notify field subscribers of validation result
-          const subscribers = this.fieldSubscribers.get(field);
-          if (subscribers) {
-            subscribers.forEach((subscriber) => subscriber(value, error));
-          }
-
-          resolve();
-        } catch (err) {
-          console.error("Validation error:", err);
-          resolve();
-        }
-      }, this.validationTimeout);
-
-      this.validationTimers.set(field, timer);
-    });
-
-    this.pendingValidations.set(field, validationPromise);
-    await validationPromise;
-  }
-
-  /**
-   * Validate entire form
-   */
-  async validateForm(values: FormData): Promise<FormErrors> {
-    if (!this.formValidator) return {};
-
-    this.setState({
-      ...this.state,
-      validating: true,
-    });
-
-    try {
-      const errors = await this.formValidator(values);
-
-      this.setState({
-        ...this.state,
-        errors: {
-          ...this.state.errors,
-          ...errors,
-        },
-        valid: Object.keys(errors).length === 0,
-        validating: false,
-      });
-
-      // Notify field subscribers of new errors
-      Object.entries(errors).forEach(([field, error]) => {
-        const subscribers = this.fieldSubscribers.get(field);
-        if (subscribers) {
-          subscribers.forEach((subscriber) => subscriber(values[field], error));
-        }
-      });
-
-      return errors;
-    } catch (err) {
-      console.error("Form validation error:", err);
-      return {};
-    }
   }
 
   private setState(newState: FormState): void {

@@ -28,11 +28,6 @@ export interface SchemaAdapter<T> {
   addFieldTypeMapping(sourceType: string, uiType: UIFieldType): void;
 
   /**
-   * Process validation rules
-   */
-  processValidation(field: any): UIFieldDefinition["validation"];
-
-  /**
    * Process field reference/relations
    */
   processReference(field: any): UIFieldDefinition["reference"] | undefined;
@@ -54,9 +49,7 @@ export abstract class BaseSchemaAdapter<T> implements SchemaAdapter<T> {
   addFieldTypeMapping(sourceType: string, uiType: UIFieldType): void {
     this.fieldTypeMapping[sourceType] = uiType;
   }
-
-  abstract processValidation(field: any): UIFieldDefinition["validation"];
-
+  
   abstract processReference(
     field: any
   ): UIFieldDefinition["reference"] | undefined;

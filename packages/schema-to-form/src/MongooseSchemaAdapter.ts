@@ -3,7 +3,6 @@ import {
   UISchema,
   UIFieldDefinition,
   UIFieldType,
-  UIFieldValidation,
   UIFieldReference, BaseSchemaAdapter, AdapterOptions } from "./";
 
 interface MongooseFieldType {
@@ -95,12 +94,6 @@ export class MongooseSchemaAdapter extends BaseSchemaAdapter<Schema> {
       ...(isReadOnly ? { readOnly: true } : {}),
     };
 
-    // Add validation
-    const validation = this.processValidation(schemaType);
-    if (validation) {
-      baseField.validation = validation;
-    }
-
     // Add reference if it exists
     const reference = this.processReference(schemaType);
     if (reference) {
@@ -145,44 +138,6 @@ export class MongooseSchemaAdapter extends BaseSchemaAdapter<Schema> {
 
     // Use standard type mapping
     return this.fieldTypeMapping[schemaType.instance] || "text";
-  }
-
-  processValidation(
-    schemaType: MongooseFieldType
-  ): UIFieldValidation | undefined {
-    if (!schemaType.options) return undefined;
-
-    const validation: UIFieldValidation = {};
-
-    // Required validation
-    if (schemaType.options.required) {
-      validation.required = true;
-    }
-
-    // Number validations
-    if (schemaType.instance === "Number") {
-      if (schemaType.options.min !== undefined) {
-        validation.min = schemaType.options.min;
-      }
-      if (schemaType.options.max !== undefined) {
-        validation.max = schemaType.options.max;
-      }
-    }
-
-    // String validations
-    if (schemaType.instance === "String") {
-      if (schemaType.options.minlength !== undefined) {
-        validation.minLength = schemaType.options.minlength;
-      }
-      if (schemaType.options.maxlength !== undefined) {
-        validation.maxLength = schemaType.options.maxlength;
-      }
-      if (schemaType.options.match) {
-        validation.pattern = schemaType.options.match.toString();
-      }
-    }
-
-    return Object.keys(validation).length > 0 ? validation : undefined;
   }
 
   processReference(

@@ -25,13 +25,7 @@ const readOnlyFieldsTransformer: SchemaTransformer = (
   Object.entries(transformedFields).forEach(([fieldName, field]) => {
     if (field.readOnly) {
       transformedFields[fieldName] = {
-        ...field,
-        validation: field.validation
-          ? {
-              ...field.validation,
-              required: false,
-            }
-          : undefined,
+        ...field
       };
     }
   });

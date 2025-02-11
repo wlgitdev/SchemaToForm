@@ -7,23 +7,19 @@ export const testSchema: UISchema = {
       type: "date",
       label: "Created At",
       readOnly: true,
-      validation: { required: false },
     },
     updatedAt: {
       type: "date",
       label: "Updated At",
       readOnly: true,
-      validation: { required: false },
     },
     name: {
       type: "text",
       label: "Name",
-      validation: { required: true },
     },
     direction: {
       type: "select",
       label: "Direction",
-      validation: { required: true },
       options: [
         { value: "incoming", label: "Incoming" },
         { value: "outgoing", label: "Outgoing" },
@@ -32,12 +28,10 @@ export const testSchema: UISchema = {
     amount: {
       type: "number",
       label: "Amount",
-      validation: { required: true },
     },
     category: {
       type: "select",
       label: "Category",
-      validation: { required: true },
       reference: {
         modelName: "TransactionCategory",
         displayField: "name",
@@ -48,7 +42,6 @@ export const testSchema: UISchema = {
     recurInterval: {
       type: "select",
       label: "Recur Interval",
-      validation: { required: true },
       options: [
         { value: "Nonrecurring", label: "Nonrecurring" },
         { value: "Daily", label: "Daily" },
@@ -61,7 +54,6 @@ export const testSchema: UISchema = {
     recurFrequency: {
       type: "number",
       label: "Recur Frequency",
-      validation: { required: true },
       dependencies: [
         {
           field: "recurInterval",
@@ -80,7 +72,6 @@ export const testSchema: UISchema = {
     recurOn: {
       type: "multiselect",
       label: "Recur On",
-      validation: { required: true },
       dependencies: [
         {
           field: "recurInterval",
@@ -273,12 +264,10 @@ export const testSchema: UISchema = {
     startDate: {
       type: "date",
       label: "Start Date",
-      validation: { required: true },
     },
     endDate: {
       type: "date",
       label: "End Date",
-      validation: { required: true },
     },
     nextOccurrence: {
       type: "text",

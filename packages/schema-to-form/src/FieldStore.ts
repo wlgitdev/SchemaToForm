@@ -5,7 +5,6 @@ export interface FieldState {
   error: string | null;
   touched: boolean;
   dirty: boolean;
-  validating: boolean;
   dependent: boolean;
 }
 
@@ -16,9 +15,6 @@ export class FieldStore {
   private state: FieldState;
   private definition: UIFieldDefinition;
   private subscribers: Set<FieldSubscriber>;
-  private validator?: (value: FieldValue) => Promise<string | null>;
-  private validationTimer?: NodeJS.Timeout;
-  private validationTimeout: number = 200;
   private dependencyFields: Set<string>;
 
   constructor(definition: UIFieldDefinition, initialValue?: FieldValue) {
@@ -36,7 +32,6 @@ export class FieldStore {
       error: null,
       touched: false,
       dirty: false,
-      validating: false,
       dependent: false,
     };
 
@@ -66,9 +61,8 @@ export class FieldStore {
       touched: true,
       dirty: true,
     });
-
-    await this.validate(transformedValue);
   }
+
   getValue(): FieldValue {
     return this.transformer.toDisplay(this.state.value);
   }
@@ -92,16 +86,8 @@ export class FieldStore {
       error: null,
       touched: false,
       dirty: false,
-      validating: false,
       dependent: this.state.dependent,
     });
-  }
-
-  /**
-   * Set field validator
-   */
-  setValidator(validator: (value: FieldValue) => Promise<string | null>): void {
-    this.validator = validator;
   }
 
   /**
@@ -191,39 +177,6 @@ export class FieldStore {
       default:
         return "";
     }
-  }
-
-  async validate(value: FieldValue): Promise<void> {
-    if (!this.validator) return;
-
-    if (this.validationTimer) {
-      clearTimeout(this.validationTimer);
-    }
-
-    return new Promise<void>((resolve) => {
-      this.validationTimer = setTimeout(async () => {
-        this.setState({
-          ...this.state,
-          validating: true,
-        });
-
-        try {
-          const error = await this.validator!(value);
-          this.setState({
-            ...this.state,
-            error,
-            validating: false,
-          });
-        } catch (err) {
-          this.setState({
-            ...this.state,
-            error: err instanceof Error ? err.message : "Validation failed",
-            validating: false,
-          });
-        }
-        resolve();
-      }, this.validationTimeout);
-    });
   }
 
   private evaluateDependencyRule(

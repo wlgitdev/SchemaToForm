@@ -60,9 +60,6 @@ export interface FieldEffect {
   // Value manipulation
   setValue?: any;
   clearValue?: boolean;
-  // Validation changes
-  setRequired?: boolean;
-  setValidation?: Partial<UIFieldValidation>;
   // Options modification for select/multiselect
   filterOptions?: {
     field: string;
@@ -97,18 +94,6 @@ export interface DependencyRule {
   or?: DependencyRule[];
 }
 
-export interface UIFieldValidation {
-  required?: boolean;
-  min?: number;
-  max?: number;
-  step?: number;
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  patternMessage?: string;
-  custom?: (value: any) => boolean | string;
-}
-
 export interface UIFieldReference {
   modelName: string;
   displayField: string;
@@ -121,7 +106,6 @@ export interface UIFieldDefinition {
   description?: string;
   defaultValue?: any;
   placeholder?: string;
-  validation?: UIFieldValidation;
   reference?: UIFieldReference;
   options?: Array<{
     value: string | number;

@@ -37,7 +37,6 @@ const FieldRenderer: React.FC<{
     className: theme.field.container,
     labelClassName: theme.field.label,
     inputClassName: theme.field.input,
-    required: field.validation?.required,
   };
 
   switch (field.type) {
@@ -153,9 +152,6 @@ const FormFields: React.FC<{
       const modifiedField: UIFieldDefinition = {
         ...field,
         readOnly: fieldEffect?.disable || field.readOnly,
-        validation: fieldEffect?.setValidation
-          ? { ...field.validation, ...fieldEffect.setValidation }
-          : field.validation,
         options: fieldOptions,
         optionGroups: fieldEffect?.setOptionGroups || field.optionGroups,
       };
@@ -211,7 +207,7 @@ const FormContent: React.FC<FormContentProps> = ({
   className,
   onSubmit,
 }) => {
-  const { handleSubmit, isValid, isSubmitting, isDirty } =
+  const { handleSubmit, isSubmitting, isDirty } =
     useFormSubmit(onSubmit);
   const theme = useFormTheme();
 
@@ -219,7 +215,7 @@ const FormContent: React.FC<FormContentProps> = ({
   const buttonClassName = `
     ${theme.button?.base || ""}
     ${
-      formDisabled || !isValid || !isDirty
+      formDisabled || !isDirty
         ? theme.button?.disabled || ""
         : theme.button?.primary || ""
     }
@@ -237,7 +233,7 @@ const FormContent: React.FC<FormContentProps> = ({
       <div className={theme.form?.submitContainer || ""}>
         <button
           type="submit"
-          disabled={formDisabled || !isValid || !isDirty}
+          disabled={formDisabled || !isDirty}
           className={buttonClassName}
         >
           {isSubmitting ? "Submitting..." : submitLabel}

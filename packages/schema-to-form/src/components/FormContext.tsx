@@ -6,7 +6,6 @@ interface FormContextValue {
   setFieldValue: (field: string, value: FieldValue) => Promise<void>;
   setValues: (values: Partial<FormData>) => void;
   reset: (values?: FormData) => void;
-  validate: () => Promise<boolean>;
   getReferenceData: (
     field: string
   ) => Array<{ value: string; label: string }> | undefined;
@@ -44,7 +43,6 @@ export const FormProvider = ({
       setFieldValue: store.setFieldValue.bind(store),
       setValues: store.setValues.bind(store),
       reset: store.reset.bind(store),
-      validate: store.validate.bind(store),
       getReferenceData: store.getReferenceData.bind(store),
       isReferenceLoading: store.isReferenceLoading.bind(store),
       submitForm: onSubmit,
@@ -87,7 +85,7 @@ export const useField = (name: string) => {
 export const useFormSubmit = (
   onSubmit?: (values: FormData) => Promise<void>
 ) => {
-  const { state, validate } = useForm();
+  const { state } = useForm();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,11 +97,8 @@ export const useFormSubmit = (
     }
 
     try {
-      setIsSubmitting(true);
-    const isValid = await validate();
-    if (isValid) {
+      setIsSubmitting(true);    
       await onSubmit(state.values);
-    }
   } catch (error) {
       console.error("Error submitting form:", error);
   } finally {
@@ -113,7 +108,6 @@ export const useFormSubmit = (
 
   return {
     handleSubmit,
-    isValid: state.valid,
     isSubmitting,
     isDirty: state.dirty,
   };

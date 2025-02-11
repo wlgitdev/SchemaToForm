@@ -5,26 +5,14 @@ export const userFormSchema: UISchema = {
     firstName: {
       label: "firstName",
       type: "text",
-      validation: {
-        required: true,
-        minLength: 2,
-      },
     },
     lastName: {
       label: "lastName",
       type: "text",
-      validation: {
-        required: true,
-        minLength: 2,
-      },
     },
     age: {
       label: "age",
       type: "number",
-      validation: {
-        min: 0,
-        max: 120,
-      },
     },
     userType: {
       label: "userType",
