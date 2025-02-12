@@ -25,6 +25,10 @@ export type DependencyOperator =
   | 'endsWith'
   | 'regex';
 
+export interface ValidationRule {
+  required?: boolean;
+  message?: string;
+}
 
 export interface BitFlagGroup {
   label: string;
@@ -50,8 +54,6 @@ export interface BitFlagOption {
 }
 
 
-
-// Define possible effects that can be applied when a dependency condition is met
 export interface FieldEffect {
   // Visual effects
   hide?: boolean;
@@ -83,7 +85,6 @@ export interface FieldEffect {
   ) => Partial<UIFieldDefinition>;
 }
 
-// Define a single dependency rule
 export interface DependencyRule {
   field: string;
   operator: DependencyOperator;
@@ -121,6 +122,7 @@ export interface UIFieldDefinition {
     toDisplay?: (value: any) => any;
     fromDisplay?: (value: any) => any;
   };
+  validation?: ValidationRule;
 }
 
 export interface UISchema {
@@ -137,11 +139,6 @@ export interface UISchema {
   };
 }
 
-// Helper function to create a dependency rule
-export function createDependencyRule(rule: DependencyRule): DependencyRule {
-  return rule;
-}
-// Helper to create UI schema definitions
 export const createUISchema = (config: UISchema): UISchema => config;
 
 // Helper function to create a type-safe bit flag config

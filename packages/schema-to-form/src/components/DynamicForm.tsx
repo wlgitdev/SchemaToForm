@@ -25,6 +25,7 @@ const FieldRenderer: React.FC<{
   disabled?: boolean;
 }> = ({ name, field, disabled }) => {
   const theme = useFormTheme();
+  const { state } = useForm();
 
   if (field.hidden) {
     return null;
@@ -34,10 +35,9 @@ const FieldRenderer: React.FC<{
     name,
     label: field.label,
     disabled: disabled || field.readOnly,
-    className: theme.field.container,
-    labelClassName: theme.field.label,
-    inputClassName: theme.field.input,
-    field:  field,
+    error: state.touched[name] ? state.errors[name] : undefined,
+    required: field.validation?.required,
+    field,
   };
 
   switch (field.type) {
@@ -62,12 +62,7 @@ const FieldRenderer: React.FC<{
       );
 
     case "checkbox":
-      return (
-        <CheckboxField
-          {...commonProps}
-          text={field.placeholder}
-        />
-      );
+      return <CheckboxField {...commonProps} text={field.placeholder} />;
 
     case "multiselect":
       return (
@@ -203,15 +198,16 @@ const FormContent: React.FC<FormContentProps> = ({
   className,
   onSubmit,
 }) => {
-  const { handleSubmit, isSubmitting, isDirty } =
+  const { handleSubmit, isSubmitting, isDirty, isValid } =
     useFormSubmit(onSubmit);
   const theme = useFormTheme();
+  const { state } = useForm();
 
   const formDisabled = loading || isSubmitting;
   const buttonClassName = `
     ${theme.button?.base || ""}
     ${
-      formDisabled || !isDirty
+      formDisabled || !isDirty || !isValid
         ? theme.button?.disabled || ""
         : theme.button?.primary || ""
     }
@@ -221,15 +217,22 @@ const FormContent: React.FC<FormContentProps> = ({
     <form
       onSubmit={handleSubmit}
       className={`${theme.form?.container || ""} ${className || ""}`}
+      noValidate
     >
       <div className={theme.form?.fieldsContainer || ""}>
         <FormFields schema={schema} disabled={formDisabled} />
       </div>
 
+      {!isValid && isDirty && (
+        <div className={theme.field.error}>
+          Please fix the validation errors before submitting.
+        </div>
+      )}
+
       <div className={theme.form?.submitContainer || ""}>
         <button
           type="submit"
-          disabled={formDisabled || !isDirty}
+          disabled={formDisabled || !isDirty || !isValid}
           className={buttonClassName}
         >
           {isSubmitting ? "Submitting..." : submitLabel}
@@ -248,6 +251,7 @@ interface DynamicFormProps {
   submitLabel?: string;
   loading?: boolean;
   className?: string;
+  theme?: Partial<FormTheme>;
 }
 
 export const DynamicForm = ({
@@ -258,7 +262,7 @@ export const DynamicForm = ({
   loading = false,
   className = "",
   theme,
-}: DynamicFormProps & { theme?: Partial<FormTheme> }): JSX.Element => {
+}: DynamicFormProps): JSX.Element => {
   return (
     <ThemeProvider theme={theme}>
       <FormProvider

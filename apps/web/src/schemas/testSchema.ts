@@ -12,10 +12,12 @@ export const testSchema: UISchema = {
       type: "date",
       label: "Updated At",
       readOnly: true,
+      validation: { required: true },
     },
     name: {
       type: "text",
       label: "Name",
+      validation: { required: true },
     },
     direction: {
       type: "select",

@@ -81,17 +81,43 @@ export class MongooseSchemaAdapter extends BaseSchemaAdapter<Schema> {
     });
   }
 
+  private isFieldRequired(schemaType: MongooseFieldType): boolean {
+    // Check direct required flag
+    if (schemaType.options?.required) {
+      return true;
+    }
+
+    // Check nested required in type definition
+    if (
+      Array.isArray(schemaType.options.type) &&
+      schemaType.options.type[0]?.required
+    ) {
+      return true;
+    }
+
+    // Check for validation array
+    if (Array.isArray(schemaType.options?.validate)) {
+      return schemaType.options.validate.some(
+        (validator: any) => validator.required || validator.options?.required
+      );
+    }
+
+    return false;
+  }
+
   private convertField(
     fieldName: string,
     schemaType: MongooseFieldType,
     readOnlyFields: string[]
   ): UIFieldDefinition {
     const isReadOnly = this.isReadOnlyField(fieldName, readOnlyFields);
+    const isRequired = this.isFieldRequired(schemaType);
 
     const baseField: UIFieldDefinition = {
       type: this.determineFieldType(schemaType),
       label: this.formatFieldLabel(fieldName),
       ...(isReadOnly ? { readOnly: true } : {}),
+      ...(isRequired ? { validation: { required: true } } : {}),
     };
 
     // Add reference if it exists
@@ -157,11 +183,11 @@ export class MongooseSchemaAdapter extends BaseSchemaAdapter<Schema> {
 
     // Handle single references
     if (schemaType.options.ref) {
-    return {
+      return {
         modelName: schemaType.options.ref,
         displayField: "name",
         multiple: false,
-    };
+      };
     }
 
     return undefined;

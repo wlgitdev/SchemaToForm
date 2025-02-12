@@ -11,6 +11,7 @@ interface FormContextValue {
   ) => Array<{ value: string; label: string }> | undefined;
   isReferenceLoading: (field: string) => boolean;
   submitForm?: (values: FormData) => Promise<void>;
+  validateForm: () => boolean;
 }
 
 const FormContext = createContext<FormContextValue | null>(null);
@@ -46,6 +47,7 @@ export const FormProvider = ({
       getReferenceData: store.getReferenceData.bind(store),
       isReferenceLoading: store.isReferenceLoading.bind(store),
       submitForm: onSubmit,
+      validateForm: store.validateForm.bind(store),
     }),
     [state, store, onSubmit]
   );
@@ -68,6 +70,7 @@ export const useField = (name: string) => {
   const { state, setFieldValue } = useForm();
   const value = state.values[name];
   const touched = state.touched[name];
+  const error = state.errors[name];
 
   const setValue = async (newValue: FieldValue) => {
     await setFieldValue(name, newValue);
@@ -76,14 +79,15 @@ export const useField = (name: string) => {
   return {
     value,
     touched,
-    setValue
+    error,
+    setValue,
   };
 };
 
 export const useFormSubmit = (
   onSubmit?: (values: FormData) => Promise<void>
 ) => {
-  const { state } = useForm();
+  const { state, validateForm } = useForm();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -91,6 +95,10 @@ export const useFormSubmit = (
 
     if (!onSubmit) {
       console.warn("No onSubmit handler provided");
+      return;
+    }
+
+    if (!validateForm()) {
       return;
     }
 
@@ -108,6 +116,7 @@ export const useFormSubmit = (
     handleSubmit,
     isSubmitting,
     isDirty: state.dirty,
+    isValid: state.isValid,
   };
 };
 

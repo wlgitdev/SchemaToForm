@@ -1,4 +1,5 @@
 import { DependencyHandler, UISchema, FieldEffect } from "./";
+import { ValidationError, ValidationService } from "./ValidationService";
 
 // FormStore.ts
 export type FieldValue =
@@ -17,8 +18,10 @@ export type TouchedFields = Record<string, boolean>;
 export interface FormState {
   values: FormData;
   touched: TouchedFields;
+  errors: Record<string, string>;
   dirty: boolean;
   submitting: boolean;
+  isValid: boolean;
 }
 
 export type FormSubscriber = (state: FormState) => void;
@@ -38,6 +41,7 @@ export class FormStore {
     modelName: string
   ) => Promise<Array<{ _id: string; name: string }>>;
   private dependencyHandler: DependencyHandler;
+  private validationService: ValidationService;
 
   constructor(
     schema: UISchema,
@@ -48,6 +52,7 @@ export class FormStore {
   ) {
     this.schema = schema;
     this.referenceLoader = referenceLoader;
+    this.validationService = new ValidationService(schema);
 
     if (!schema || !schema.fields) {
       throw new Error("Invalid schema provided to FormStore");
@@ -66,6 +71,7 @@ export class FormStore {
 
     // For select fields with dependencies, set initial value to first option
     const baseValues = this.initializeValues(initialValues);
+    const initialErrors = this.validationService.validateForm(baseValues);
     Object.entries(schema.fields).forEach(([fieldName, field]) => {
       if (
         field.type === "select" &&
@@ -102,8 +108,10 @@ export class FormStore {
     this.state = {
       values: baseValues,
       touched: {},
+      errors: this.transformValidationErrors(initialErrors),
       dirty: false,
       submitting: false,
+      isValid: initialErrors.length === 0,
     };
 
     if (referenceLoader) {
@@ -112,6 +120,45 @@ export class FormStore {
   }
 
   // Public API
+
+  private transformValidationErrors(
+    errors: ValidationError[]
+  ): Record<string, string> {
+    return errors.reduce((acc, error) => {
+      acc[error.field] = error.message;
+      return acc;
+    }, {} as Record<string, string>);
+  }
+  private validateField(field: string, value: FieldValue): string | null {
+    const error = this.validationService.validateField(field, value);
+    return error?.message || null;
+  }
+
+  validateForm(): boolean {
+    const errors = this.validationService.validateForm(this.state.values);
+    const newErrors = this.transformValidationErrors(errors);
+
+    this.setState({
+      ...this.state,
+      errors: newErrors,
+      isValid: errors.length === 0,
+    });
+
+    return errors.length === 0;
+  }
+
+  async submit(): Promise<boolean> {
+    if (!this.validateForm()) {
+      return false;
+    }
+
+    this.setState({
+      ...this.state,
+      submitting: true,
+    });
+
+    return true;
+  }
 
   /**
    * Subscribe to form state changes
@@ -156,6 +203,14 @@ export class FormStore {
       ...this.state.values,
       [field]: value,
     };
+
+    // Validate the changed field
+    const fieldError = this.validateField(field, value);
+    const newErrors = {
+      ...this.state.errors,
+      [field]: fieldError || "",
+    };
+
     // Evaluate dependencies and apply effects
 
     const effects = this.evaluateAllDependencies(newValues);
@@ -182,21 +237,20 @@ export class FormStore {
     };
 
     this.setState({
-      ...this.state,
       ...newState,
-      dirty: true,
+      errors: newErrors,
       touched: {
         ...this.state.touched,
         [field]: true,
       },
+      dirty: true,
+      isValid: Object.values(newErrors).every((error) => !error),
     });
 
     // Notify field subscribers of value change
     const subscribers = this.fieldSubscribers.get(field);
     if (subscribers) {
-      subscribers.forEach((subscriber) =>
-        subscriber(value)
-      );
+      subscribers.forEach((subscriber) => subscriber(value));
     }
   }
 
@@ -231,11 +285,17 @@ export class FormStore {
    */
   reset(values?: FormData): void {
     const newValues = values || this.initializeValues({});
+    // Validate the new/initial values
+    const validationErrors = this.validationService.validateForm(newValues);
+    const errors = this.transformValidationErrors(validationErrors);
+
     this.setState({
       values: newValues,
       touched: {},
       dirty: false,
       submitting: false,
+      errors,
+      isValid: validationErrors.length === 0,
     });
   }
 
@@ -425,11 +485,17 @@ export class FormStore {
       }
     });
 
+    // Validate the new state after applying effects
+    const validationErrors = this.validationService.validateForm(newValues);
+    const errors = this.transformValidationErrors(validationErrors);
+
     return {
       values: newValues,
       touched: {},
       dirty: false,
       submitting: false,
+      errors,
+      isValid: validationErrors.length === 0,
     };
   }
 
