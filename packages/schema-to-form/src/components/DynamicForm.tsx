@@ -76,7 +76,7 @@ const FieldRenderer: React.FC<{
     default:
       return (
         <div className={theme.field.error}>
-          Unsupported field type: {field.type}
+          Unsupported field type: {field.label} / {field.type}
         </div>
       );
   }
