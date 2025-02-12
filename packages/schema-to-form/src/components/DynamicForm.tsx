@@ -57,7 +57,6 @@ const FieldRenderer: React.FC<{
           {...commonProps}
           options={field.options || []}
           placeholder={field.placeholder}
-          selectClassName={theme.field.select}
         />
       );
 
@@ -66,9 +65,6 @@ const FieldRenderer: React.FC<{
         <CheckboxField
           {...commonProps}
           text={field.placeholder}
-          checkboxClassName={theme.field.checkbox.input}
-          containerClassName={theme.field.checkbox.container}
-          labelClassName={theme.field.checkbox.label}
         />
       );
 
@@ -78,7 +74,6 @@ const FieldRenderer: React.FC<{
           {...commonProps}
           options={field.options || []}
           placeholder={field.placeholder}
-          selectClassName={theme.field.multiselect}
           field={field}
         />
       );

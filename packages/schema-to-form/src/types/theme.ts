@@ -16,6 +16,12 @@ export interface FormTheme {
       input: string;
       label: string;
     };
+    radio: {
+      group: string;
+      container: string;
+      input: string;
+      label: string;
+    };
     multiselect: string;
     error: string;
   };

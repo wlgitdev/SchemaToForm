@@ -38,6 +38,12 @@ const customTheme: Partial<FormTheme> = {
         "rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500",
       label: "text-sm font-medium text-gray-700",
     },
+    radio: {
+      group: "space-y-2",
+      container: "flex items-center gap-2",
+      input: "h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500",
+      label: "text-sm text-gray-900",
+    },
     multiselect:
       "w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
     error: "mt-1 text-sm text-red-600",
