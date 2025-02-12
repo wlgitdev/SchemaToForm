@@ -37,6 +37,7 @@ const FieldRenderer: React.FC<{
     className: theme.field.container,
     labelClassName: theme.field.label,
     inputClassName: theme.field.input,
+    field:  field,
   };
 
   switch (field.type) {
@@ -74,7 +75,6 @@ const FieldRenderer: React.FC<{
           {...commonProps}
           options={field.options || []}
           placeholder={field.placeholder}
-          field={field}
         />
       );
 

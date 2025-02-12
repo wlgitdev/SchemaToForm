@@ -6,6 +6,7 @@ interface BaseFieldProps {
   label: string;
   disabled?: boolean;
   required?: boolean;
+  field: UIFieldDefinition;
 }
 
 const FieldLabel: React.FC<BaseFieldProps> = ({ name, label, required }) => {
@@ -38,12 +39,13 @@ const FieldWrapper: React.FC<FieldWrapperProps> = ({
   touched,
   children,
   required,
+  field
 }) => {
   const theme = useFormTheme();
 
     return (
     <div className={theme.field.container}>
-      <FieldLabel name={name} label={label} required={required} />
+      <FieldLabel name={name} label={label} required={required} field={field}/>
       {children}
       {touched && error && (
         <p className={theme.field.error} id={`${name}-error`}>
@@ -66,17 +68,22 @@ export const InputField: React.FC<InputFieldProps> = ({
   placeholder,
   disabled = false,
   required,
+  field,
 }) => {
   const { value, touched, setValue } = useField(name);
   const theme = useFormTheme();
 
+  const transformer = useMemo(() => new FieldTransformer(field), [field]);
+  const displayValue = useMemo(
+    () => transformer.toDisplay(value),
+    [transformer, value]
+  );
+
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue =
-        type === 'number' ? Number(e.target.value) : e.target.value;
-      setValue(newValue);
+      setValue(transformer.fromDisplay(e.target.value));
     },
-    [setValue, type]
+    [setValue, transformer]
   );
 
   return (
@@ -85,12 +92,13 @@ export const InputField: React.FC<InputFieldProps> = ({
       label={label}
       touched={touched}
       required={required}
+      field={field}
     >
       <input
         id={name}
         name={name}
         type={type}
-        value={value as string}
+        value={displayValue}
         onChange={handleChange}
         placeholder={placeholder}
         disabled={disabled}
@@ -119,10 +127,17 @@ export const SelectField: React.FC<SelectFieldProps> = ({
   placeholder,
   disabled = false,
   required,
+  field,
 }) => {
   const { value, touched, setValue } = useField(name);
   const { getReferenceData, isReferenceLoading } = useForm();
   const theme = useFormTheme();
+
+  const transformer = useMemo(() => new FieldTransformer(field), [field]);
+  const displayValue = useMemo(
+    () => transformer.toDisplay(value),
+    [transformer, value]
+  );
 
   const referenceData = getReferenceData(name);
   const loading = isReferenceLoading(name);
@@ -130,14 +145,14 @@ export const SelectField: React.FC<SelectFieldProps> = ({
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setValue(e.target.value);
+      setValue(transformer.fromDisplay(e.target.value));
     },
-    [setValue]
+    [setValue, transformer]
   );
 
   if (loading) {
     return (
-      <FieldWrapper name={name} label={label} required={required}>
+      <FieldWrapper name={name} label={label} required={required} field={field}>
         <select disabled className={theme.field.select}>
           <option>Loading...</option>
         </select>
@@ -151,6 +166,7 @@ export const SelectField: React.FC<SelectFieldProps> = ({
       label={label}
       touched={touched}
       required={required}
+      field={field}
     >
       <select
         id={name}
@@ -187,15 +203,22 @@ export const CheckboxField: React.FC<CheckboxFieldProps> = ({
   text,
   disabled = false,
   required,
+  field,
 }) => {
   const { value, touched, setValue } = useField(name);
   const theme = useFormTheme();
 
+  const transformer = useMemo(() => new FieldTransformer(field), [field]);
+  const displayValue = useMemo(
+    () => transformer.toDisplay(value),
+    [transformer, value]
+  );
+
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setValue(e.target.checked);
+      setValue(transformer.fromDisplay(e.target.checked));
     },
-    [setValue]
+    [setValue, transformer]
   );
 
   return (
@@ -204,13 +227,14 @@ export const CheckboxField: React.FC<CheckboxFieldProps> = ({
       label={label}
       touched={touched}
       required={required}
+      field={field}
     >
       <div className={theme.field.checkbox.container}>
         <input
           id={name}
           name={name}
           type="checkbox"
-          checked={value as boolean}
+          checked={displayValue}
           onChange={handleChange}
           disabled={disabled}
           className={theme.field.checkbox.input}
@@ -237,6 +261,7 @@ export const RadioGroupField: React.FC<RadioGroupFieldProps> = ({
   options,
   disabled = false,
   required,
+  field
 }) => {
   const { value, touched, setValue } = useField(name);
   const theme = useFormTheme();
@@ -254,6 +279,7 @@ export const RadioGroupField: React.FC<RadioGroupFieldProps> = ({
       label={label}
       touched={touched}
       required={required}
+      field={field}
     >
       <div className={theme.field.radio.group}>
         {options.map((option) => (
@@ -284,7 +310,6 @@ export const RadioGroupField: React.FC<RadioGroupFieldProps> = ({
 
 // Multi-select Field
 interface MultiSelectFieldProps extends SelectFieldProps {
-  field: UIFieldDefinition;
 }
 
 export const MultiSelectField: React.FC<MultiSelectFieldProps> = ({
@@ -321,6 +346,7 @@ export const MultiSelectField: React.FC<MultiSelectFieldProps> = ({
       label={label}
       touched={touched}
       required={required}
+      field={field}
     >
       <select
         id={name}
