@@ -189,6 +189,7 @@ interface FormContentProps {
   loading: boolean;
   className?: string;
   onSubmit?: (values: FormData) => Promise<void>;
+  validateBeforeSubmit?: boolean;
 }
 
 const FormContent: React.FC<FormContentProps> = ({
@@ -197,17 +198,22 @@ const FormContent: React.FC<FormContentProps> = ({
   loading,
   className,
   onSubmit,
+  validateBeforeSubmit = true,
 }) => {
-  const { handleSubmit, isSubmitting, isDirty, isValid } =
-    useFormSubmit(onSubmit);
+  const { handleSubmit, isSubmitting, isDirty, isValid } = useFormSubmit(
+    onSubmit,
+    validateBeforeSubmit
+  );
   const theme = useFormTheme();
-  const { state } = useForm();
 
   const formDisabled = loading || isSubmitting;
+  const submitDisabled =
+    formDisabled || !isDirty || (validateBeforeSubmit && !isValid);
+
   const buttonClassName = `
     ${theme.button?.base || ""}
     ${
-      formDisabled || !isDirty || !isValid
+      submitDisabled
         ? theme.button?.disabled || ""
         : theme.button?.primary || ""
     }
@@ -223,7 +229,7 @@ const FormContent: React.FC<FormContentProps> = ({
         <FormFields schema={schema} disabled={formDisabled} />
       </div>
 
-      {!isValid && isDirty && (
+      {validateBeforeSubmit && !isValid && (
         <div className={theme.field.error}>
           Please fix the validation errors before submitting.
         </div>
@@ -232,7 +238,7 @@ const FormContent: React.FC<FormContentProps> = ({
       <div className={theme.form?.submitContainer || ""}>
         <button
           type="submit"
-          disabled={formDisabled || !isDirty || !isValid}
+          disabled={submitDisabled}
           className={buttonClassName}
         >
           {isSubmitting ? "Submitting..." : submitLabel}
@@ -252,6 +258,7 @@ interface DynamicFormProps {
   loading?: boolean;
   className?: string;
   theme?: Partial<FormTheme>;
+  validateBeforeSubmit?: boolean;
 }
 
 export const DynamicForm = ({
@@ -262,6 +269,7 @@ export const DynamicForm = ({
   loading = false,
   className = "",
   theme,
+  validateBeforeSubmit = true,
 }: DynamicFormProps): JSX.Element => {
   return (
     <ThemeProvider theme={theme}>
@@ -269,6 +277,7 @@ export const DynamicForm = ({
         schema={schema}
         initialValues={initialValues}
         onSubmit={onSubmit}
+        validateBeforeSubmit={validateBeforeSubmit}
       >
         <FormContent
           schema={schema}
@@ -276,6 +285,7 @@ export const DynamicForm = ({
           loading={loading}
           className={className}
           onSubmit={onSubmit}
+          validateBeforeSubmit={validateBeforeSubmit}
         />
       </FormProvider>
     </ThemeProvider>

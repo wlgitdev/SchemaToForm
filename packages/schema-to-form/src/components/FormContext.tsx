@@ -21,6 +21,7 @@ interface FormProviderProps {
   initialValues?: FormData;
   children: React.ReactNode;
   onSubmit?: (values: FormData) => Promise<void>;
+  validateBeforeSubmit?: boolean;
 }
 
 export const FormProvider = ({
@@ -85,7 +86,8 @@ export const useField = (name: string) => {
 };
 
 export const useFormSubmit = (
-  onSubmit?: (values: FormData) => Promise<void>
+  onSubmit?: (values: FormData) => Promise<void>,
+  validateBeforeSubmit: boolean = true
 ) => {
   const { state, validateForm } = useForm();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -98,7 +100,7 @@ export const useFormSubmit = (
       return;
     }
 
-    if (!validateForm()) {
+    if (validateBeforeSubmit && !validateForm()) {
       return;
     }
 
