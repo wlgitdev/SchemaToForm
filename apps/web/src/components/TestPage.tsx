@@ -30,7 +30,10 @@ const FormPage = () => {
         title="Dynamic Form"
       >
         <div className="p-4">
-          <TestForm onSubmit={handleSubmit} />
+          <TestForm
+            onSubmit={handleSubmit}
+            initialValues={formData || undefined}
+          />
         </div>
       </Modal>
 

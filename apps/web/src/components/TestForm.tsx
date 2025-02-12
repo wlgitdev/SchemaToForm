@@ -58,10 +58,10 @@ const customTheme: Partial<FormTheme> = {
 
 interface TestFormProps {
   onSubmit: (data: FormData) => Promise<void>;
+  initialValues?: FormData;
 }
 
-const TestForm: React.FC<TestFormProps> = ({ onSubmit }) => {
-
+const TestForm: React.FC<TestFormProps> = ({ onSubmit, initialValues }) => {
   const handleSubmit = async (data: FormData) => {
     try {
       await onSubmit(data);
@@ -76,6 +76,7 @@ const TestForm: React.FC<TestFormProps> = ({ onSubmit }) => {
       onSubmit={handleSubmit}
       submitLabel="Submit Form"
       theme={customTheme}
+      initialValues={initialValues}
     />
   );
 };
