@@ -11,10 +11,7 @@ const ValidationSummary: React.FC<ValidationSummaryProps> = ({
   const { state } = useForm();
   const theme = useFormTheme();
   const invalidFields = Object.entries(state.errors)
-    .filter(
-      ([fieldName, error]) =>
-        error && (state.touched[fieldName] || submitAttempted)
-    )
+    .filter(([fieldName, error]) => error)
     .map(([fieldName, error]) => ({
       fieldName,
       error,
