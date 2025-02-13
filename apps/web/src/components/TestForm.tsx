@@ -54,6 +54,18 @@ const customTheme: Partial<FormTheme> = {
     container: "grid gap-4 md:grid-cols-2",
     item: "w-full",
   },
+  banner: {
+    container: "mb-4 p-4 border rounded-md",
+    title: "font-medium mb-2",
+    list: "list-disc list-inside space-y-1",
+    item: "text-sm",
+    error: {
+      container: "border-red-300 bg-red-50",
+      title: "text-red-800",
+      list: "list-disc list-inside space-y-1",
+      item: "text-red-700 text-sm",
+    },
+  },
 };
 
 interface TestFormProps {

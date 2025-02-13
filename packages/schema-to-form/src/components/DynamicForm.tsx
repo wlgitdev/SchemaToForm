@@ -18,6 +18,7 @@ import {
   DependencyHandler,
   ThemeProvider,
 } from "../";
+import ValidationSummary from "./ValidationSummary";
 
 const FieldRenderer: React.FC<{
   name: string;
@@ -200,24 +201,23 @@ const FormContent: React.FC<FormContentProps> = ({
   onSubmit,
   validateBeforeSubmit = true,
 }) => {
-  const { handleSubmit, isSubmitting, isDirty, isValid } = useFormSubmit(
-    onSubmit,
-    validateBeforeSubmit
-  );
+  const [submitAttempted, setSubmitAttempted] = React.useState(false);
+  const {
+    handleSubmit: originalHandleSubmit,
+    isSubmitting,
+    isDirty,
+    isValid,
+  } = useFormSubmit(onSubmit, validateBeforeSubmit);
   const theme = useFormTheme();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    setSubmitAttempted(true);
+    await originalHandleSubmit(e);
+  };
 
   const formDisabled = loading || isSubmitting;
   const submitDisabled =
     formDisabled || !isDirty || (validateBeforeSubmit && !isValid);
-
-  const buttonClassName = `
-    ${theme.button?.base || ""}
-    ${
-      submitDisabled
-        ? theme.button?.disabled || ""
-        : theme.button?.primary || ""
-    }
-  `;
 
   return (
     <form
@@ -229,21 +229,22 @@ const FormContent: React.FC<FormContentProps> = ({
         <FormFields schema={schema} disabled={formDisabled} />
       </div>
 
-      {validateBeforeSubmit && !isValid && (
-        <div className={theme.field.error}>
-          Please fix the validation errors before submitting.
-        </div>
-      )}
-
       <div className={theme.form?.submitContainer || ""}>
         <button
           type="submit"
           disabled={submitDisabled}
-          className={buttonClassName}
+          className={`${theme.button?.base || ""} ${
+            submitDisabled
+              ? theme.button?.disabled || ""
+              : theme.button?.primary || ""
+          }`}
         >
           {isSubmitting ? "Submitting..." : submitLabel}
         </button>
       </div>
+      {validateBeforeSubmit && (
+        <ValidationSummary submitAttempted={submitAttempted} />
+      )}
     </form>
   );
 };

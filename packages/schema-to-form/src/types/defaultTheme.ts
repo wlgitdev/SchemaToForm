@@ -8,6 +8,18 @@ export const defaultTheme: FormTheme = {
     fieldsContainer: "space-y-6",
     submitContainer: "mt-6 flex justify-end",
   },
+  banner: {
+    container: "mb-4 p-4 border rounded-md",
+    title: "font-medium mb-2",
+    list: "list-disc list-inside space-y-1",
+    item: "text-sm",
+    error: {
+      container: "border-red-300 bg-red-50",
+      title: "text-red-800",
+      list: "list-disc list-inside space-y-1",
+      item: "text-red-700 text-sm"
+    }
+  },
   field: {
     container: "w-full",
     label: "block text-sm font-medium text-gray-700 mb-1",

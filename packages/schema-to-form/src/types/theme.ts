@@ -4,6 +4,18 @@ export interface FormTheme {
     fieldsContainer: string;
     submitContainer: string;
   };
+  banner: {
+    container: string;
+    title: string;
+    list: string;
+    item: string;
+    error: {
+      container: string;
+      title: string;
+      list: string;
+      item: string;
+    };
+  };
   field: {
     container: string;
     label: string;
