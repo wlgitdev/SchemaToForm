@@ -1,9 +1,9 @@
-import { testSchema } from "@/schemas";
 import {
   DynamicForm,
   FormData,
 } from "@schematoform/schema-to-form";
 import { customTheme } from "./customTheme";
+import { testUpdateSchema as testSchema } from "@/schemas";
 
 interface TestFormProps {
   onSubmit: (data: FormData) => Promise<void>;

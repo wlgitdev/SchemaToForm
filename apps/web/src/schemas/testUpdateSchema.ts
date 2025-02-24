@@ -1,41 +1,39 @@
 import { UISchema } from "@schematoform/schema-to-form";
 
-export const testSchema: UISchema = {
+export const testUpdateSchema: UISchema = {
   fields: {
     recordId: { type: "text", label: "Record Id", readOnly: true },
     createdAt: {
       type: "date",
       label: "Created At",
+      validation: { required: true },
+      valueMapper: {},
       readOnly: true,
     },
     updatedAt: {
       type: "date",
       label: "Updated At",
+      validation: { required: true },
+      valueMapper: {},
       readOnly: true,
-      validation: { required: true },
     },
-    name: {
-      type: "text",
-      label: "Name",
-      validation: { required: true },
-    },
+    name: { type: "text", label: "Name", validation: { required: true } },
     direction: {
       type: "select",
       label: "Direction",
+      validation: { required: true },
       options: [
         { value: "incoming", label: "Incoming" },
         { value: "outgoing", label: "Outgoing" },
       ],
     },
-    amount: {
-      type: "number",
-      label: "Amount",
-    },
-    category: {
+    amount: { type: "number", label: "Amount", validation: { required: true } },
+    bankAccount: {
       type: "select",
-      label: "Category",
+      label: "Bank Account",
+      validation: { required: true },
       reference: {
-        modelName: "TransactionCategory",
+        modelName: "BankAccount",
         displayField: "name",
         multiple: false,
       },
@@ -44,6 +42,7 @@ export const testSchema: UISchema = {
     recurInterval: {
       type: "select",
       label: "Recur Interval",
+      validation: { required: true },
       options: [
         { value: "Nonrecurring", label: "Nonrecurring" },
         { value: "Daily", label: "Daily" },
@@ -56,30 +55,24 @@ export const testSchema: UISchema = {
     recurFrequency: {
       type: "number",
       label: "Recur Frequency",
-      dependencies: [
-        {
-          field: "recurInterval",
-          operator: "equals",
-          value: "Nonrecurring",
-          effect: { hide: true, setValue: 0 },
-        },
-        {
-          field: "recurInterval",
-          operator: "notEquals",
-          value: "Nonrecurring",
-          effect: { hide: false, setValue: 1 },
-        },
-      ],
+      validation: { required: true },
     },
     recurOn: {
       type: "multiselect",
       label: "Recur On",
+      validation: { required: true },
       dependencies: [
         {
           field: "recurInterval",
           operator: "equals",
           value: "Nonrecurring",
-          effect: { hide: true, setValue: 0 },
+          effect: { hide: true, setValue: 0, disable: true },
+        },
+        {
+          field: "recurInterval",
+          operator: "equals",
+          value: "Daily",
+          effect: { hide: true, setValue: 1, disable: true },
         },
         {
           field: "recurInterval",
@@ -87,28 +80,7 @@ export const testSchema: UISchema = {
           value: "Weekly",
           effect: {
             hide: false,
-            setOptionGroups: [
-              {
-                label: "Days of Week",
-                options: [
-                  { value: 16, label: "Monday" },
-                  { value: 32, label: "Tuesday" },
-                  { value: 64, label: "Wednesday" },
-                  { value: 128, label: "Thursday" },
-                  { value: 256, label: "Friday" },
-                  { value: 512, label: "Saturday" },
-                  { value: 1024, label: "Sunday" },
-                ],
-              },
-            ],
-          },
-        },
-        {
-          field: "recurInterval",
-          operator: "equals",
-          value: "Daily",
-          effect: {
-            hide: false,
+            disable: false,
             setOptionGroups: [
               {
                 label: "Days of Week",
@@ -131,6 +103,7 @@ export const testSchema: UISchema = {
           value: "Monthly",
           effect: {
             hide: false,
+            disable: false,
             setOptionGroups: [
               {
                 label: "Days of Month",
@@ -178,6 +151,7 @@ export const testSchema: UISchema = {
           value: "Monthly On",
           effect: {
             hide: false,
+            disable: false,
             setOptionGroups: [
               {
                 label: "Week Occurrence",
@@ -288,10 +262,24 @@ export const testSchema: UISchema = {
     startDate: {
       type: "date",
       label: "Start Date",
+      validation: { required: true },
+      valueMapper: {},
     },
     endDate: {
       type: "date",
       label: "End Date",
+      validation: { required: true },
+      valueMapper: {},
+    },
+    categories: {
+      type: "multiselect",
+      label: "Categories",
+      validation: { required: true },
+      reference: {
+        modelName: "TransactionCategory",
+        displayField: "name",
+        multiple: true,
+      },
     },
     nextOccurrence: {
       type: "text",
@@ -305,7 +293,14 @@ export const testSchema: UISchema = {
       {
         name: "basic",
         label: "",
-        fields: ["name", "direction", "amount", "notes", "nextOccurrence"],
+        fields: [
+          "name",
+          "bankAccount",
+          "direction",
+          "amount",
+          "notes",
+          "categories",
+        ],
       },
       {
         name: "scheduling",
@@ -328,10 +323,11 @@ export const testSchema: UISchema = {
     ],
     order: [
       "name",
+      "bankAccount",
       "direction",
       "amount",
       "notes",
-      "nextOccurrence",
+      "categories",
       "startDate",
       "endDate",
       "recurInterval",
