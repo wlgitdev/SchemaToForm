@@ -1,4 +1,4 @@
-import { useFormTheme } from "../";
+import { useFormTheme } from "..";
 import React from "react";
 
 interface CollapsibleSectionProps {

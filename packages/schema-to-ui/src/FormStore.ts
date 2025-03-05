@@ -1,4 +1,4 @@
-import { DependencyHandler, UISchema, FieldEffect } from "./";
+import { DependencyHandler, UISchema, FieldEffect } from ".";
 import { ValidationError, ValidationService } from "./ValidationService";
 
 // FormStore.ts

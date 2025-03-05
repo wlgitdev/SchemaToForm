@@ -1,5 +1,5 @@
 import React, { createContext, JSX, useContext, useEffect, useMemo } from 'react';
-import { FormStore, FormState, FieldValue, FormData, UISchema } from '../';
+import { FormStore, FormState, FieldValue, FormData, UISchema } from '..';
 
 interface FormContextValue {
   state: FormState;

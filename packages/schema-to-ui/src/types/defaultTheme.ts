@@ -1,4 +1,4 @@
-import { FormTheme } from "../";
+import { FormTheme } from "..";
 
 // Default theme with Tailwind classes
 

@@ -3,7 +3,7 @@ import {
   UISchema,
   UIFieldDefinition,
   UIFieldType,
-  UIFieldReference, BaseSchemaAdapter, AdapterOptions } from "./";
+  UIFieldReference, BaseSchemaAdapter, AdapterOptions } from ".";
 
 interface MongooseFieldType {
   instance: string;

@@ -1,4 +1,4 @@
-import { UISchema, FormData, UIFieldDefinition } from "./";
+import { UISchema, FormData, UIFieldDefinition } from ".";
 
 export interface ValidationError {
   field: string;

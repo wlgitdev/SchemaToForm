@@ -1,4 +1,4 @@
-import { FormTheme } from "@schematoform/schema-to-form";
+import { FormTheme } from "@schematoform/schema-to-ui";
 
 export const customTheme: Partial<FormTheme> = {
   form: {

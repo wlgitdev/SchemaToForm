@@ -17,7 +17,7 @@ import {
   useFormTheme,
   DependencyHandler,
   ThemeProvider,
-} from "../";
+} from "..";
 import ValidationSummary from "./ValidationSummary";
 
 const FieldRenderer: React.FC<{

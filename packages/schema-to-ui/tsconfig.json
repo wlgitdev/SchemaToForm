@@ -23,6 +23,6 @@
     "node_modules",
     "**/*.test.ts",
     "**/*.test.tsx",
-    "packages/schema-to-form/dist"
+    "packages/schema-to-ui/dist"
   ]
 }

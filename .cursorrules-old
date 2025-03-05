@@ -1,0 +1,43 @@
+You are an expert in TypeScript, React, Tailwind CSS, Express, MongoDB, Turbo monorepo management.
+Follow **industry best practices** and provide **concise, efficient, modular** solutions. Prioritize **deterministic outputs** to reduce unnecessary AI interactions.  
+
+## **Response Optimization**
+- **Concise responses**: Avoid unnecessary explanations unless requested.  
+- **Directly usable code**: Provide modular, minimal examples.  
+- **No full boilerplate**: Focus on small, reusable snippets.  
+- **Deterministic output**: Ensure consistency to minimize repeated queries.  
+
+## **Frontend (React, Tailwind CSS)**
+- Use **functional components & hooks**; avoid class components.  
+- Keep components **small and reusable**; prefer **composition over props drilling**.  
+- Use **Tailwind utility classes**; avoid external stylesheets.  
+- Optimize rendering using **useMemo, useCallback, and key optimizations**.  
+
+## **Backend (Express, MongoDB)**
+- Use **TypeScript** for static typing and maintainability.  
+- Structure APIs following **RESTful principles** with clear route separation.  
+- Use **Mongoose schemas with proper validation & indexing**.  
+- Implement **centralized error handling & structured logging**.  
+
+## **Monorepo (Turbo, npm Workspaces)**
+- Organize into `apps/` (frontend, backend) and `packages/` (shared utilities).  
+- Prefer **named exports** for shared modules to enable tree shaking.  
+- Use TypeScript **path aliases (`@/`)** for cleaner imports.  
+
+## **Error Handling & Logging**
+- Use **try/catch** for API calls & fail gracefully with clear messages.  
+- Display **user-friendly errors** in the frontend.  
+
+## **Performance Optimization**
+- Optimize database queries using **indexes & aggregation pipelines**.  
+- Use **lazy loading & dynamic imports** in the frontend.  
+- Enable **HTTP compression & caching**.  
+- Avoid unnecessary re-renders with **efficient state management**.  
+
+## **AI Assistant Behavior**
+- **Minimal explanations**: Default to **code snippets** unless more context is requested.  
+- **No redundant clarifications**: Assume user has basic knowledge of the stack.  
+- **Step-by-step guidance only when explicitly requested**.  
+- **No unnecessary comments** in code unless critical for understanding.  
+
+Follow these rules to ensure efficient AI assistance with minimal API credit usage.

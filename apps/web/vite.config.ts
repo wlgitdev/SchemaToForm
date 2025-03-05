@@ -8,8 +8,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
-      "@schematoform/schema-to-form": fileURLToPath(
-        new URL("../../packages/schema-to-form/src", import.meta.url)
+      "@schematoform/schema-to-ui": fileURLToPath(
+        new URL("../../packages/schema-to-ui/src", import.meta.url)
       ),
     },
   },
