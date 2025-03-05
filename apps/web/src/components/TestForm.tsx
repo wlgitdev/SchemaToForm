@@ -1,7 +1,7 @@
 import {
   DynamicForm,
   FormData,
-} from "@schematoform/schema-to-form";
+} from "@schematoform/schema-to-ui";
 import { customTheme } from "./customTheme";
 import { testUpdateSchema as testSchema } from "@/schemas";
 

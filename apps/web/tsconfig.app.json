@@ -30,15 +30,15 @@
     "outDir": "./dist", 
     "paths": {
       "@/*": ["src/*"],
-      "@schematoform/schema-to-form": ["../../packages/schema-to-form/src"],
-      "@schematoform/schema-to-form/*": ["../../packages/schema-to-form/src/*"]
+      "@schematoform/schema-to-ui": ["../../packages/schema-to-ui/src"],
+      "@schematoform/schema-to-ui/*": ["../../packages/schema-to-ui/src/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "dist"],
   "references": [
     {
-      "path": "../../packages/schema-to-form"
+      "path": "../../packages/schema-to-ui"
     }
   ]
 }

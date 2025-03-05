@@ -1,4 +1,4 @@
-import { UISchema } from "@schematoform/schema-to-form";
+import { UISchema } from "@schematoform/schema-to-ui";
 
 export const testFilterSchema: UISchema = {
   fields: {

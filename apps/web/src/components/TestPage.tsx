@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
-import { FormData } from "@schematoform/schema-to-form";
+import { FormData } from "@schematoform/schema-to-ui";
 import { Modal } from "./Modal";
 import TestForm from "./TestForm";
 
-const FormPage = () => {
+const HomePage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<FormData | null>(null);
 
@@ -59,4 +59,4 @@ const FormPage = () => {
   );
 };
 
-export default FormPage;
+export default HomePage;
