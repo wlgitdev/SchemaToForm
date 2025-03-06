@@ -1,8 +1,8 @@
 import React, { createContext, useContext } from "react";
 import { FormTheme } from "../types";
-import { defaultTheme } from "../types";
+import { defaultFormTheme } from "../types";
 
-const ThemeContext = createContext<FormTheme>(defaultTheme);
+const ThemeContext = createContext<FormTheme>(defaultFormTheme);
 
 const deepMerge = (target: any, source: any) => {
   if (!source) return target;
@@ -28,7 +28,7 @@ export const ThemeProvider: React.FC<{
   children: React.ReactNode,
 }> = ({ theme, children }) => {
   const mergedTheme = React.useMemo(
-    () => deepMerge(defaultTheme, theme),
+    () => deepMerge(defaultFormTheme, theme),
     [theme]
   );
   

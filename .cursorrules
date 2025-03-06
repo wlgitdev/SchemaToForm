@@ -44,6 +44,12 @@
       "action": "executeWithRole",
       "role": "dev"
     },
+    "debug": {
+      "description": "Identify the issue and propose the simplest solution. Provide 3 reasoning paragraphs before you respond.",
+      "usage": "/debug [expected behaviour]\n[actual behaviour]\n[context]",
+      "action": "executeWithRole",
+      "role": "dev"
+    },
     "test": {
       "description": "Generate test cases",
       "usage": "/test [unit|integration|e2e] [name]",

@@ -1,7 +1,8 @@
-import TestPage from "./components/TestPage";
+// import TestPage from "./components/FormTestPage";
+import { ListTestPage } from "./components/ListTestPage";
 
 function App() {
-  return <TestPage />;
+  return <ListTestPage />;
 }
 
 export default App;
