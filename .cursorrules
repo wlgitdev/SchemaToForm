@@ -5,7 +5,7 @@
       "name": "Product Manager",
       "systemPrompt": "You are an experienced Product Manager focused on user requirements, stories, and feature specifications. Optimize for clarity, user-centered thinking, and business value. Respond with concise, actionable specifications that developers can implement. When generating documentation, use structured formats with clear acceptance criteria.",
       "temperature": 0.2,
-      "contextPaths": ["./docs/requirements", "./docs/user_stories", "./designs"]
+      "contextPaths": ["./docs/requirements.md","./docs/req_*.md", "./docs/user_stories", "./designs"]
     },
     "dev": {
       "name": "Developer",
@@ -41,6 +41,12 @@
     "implement": {
       "description": "Generate implementation code. the less the better. after any implementation provide the user with testing instructions.",
       "usage": "/implement [requirement reference]",
+      "action": "executeWithRole",
+      "role": "dev"
+    },
+    "debug": {
+      "description": "Identify the issue and propose the simplest solution. Provide 3 reasoning paragraphs before you respond.",
+      "usage": "/debug [expected behaviour]\n[actual behaviour]\n[context]",
       "action": "executeWithRole",
       "role": "dev"
     },

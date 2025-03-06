@@ -2,7 +2,7 @@ import { FormTheme } from "..";
 
 // Default theme with Tailwind classes
 
-export const defaultTheme: FormTheme = {
+export const defaultFormTheme: FormTheme = {
   form: {
     container: "",
     fieldsContainer: "space-y-6",
