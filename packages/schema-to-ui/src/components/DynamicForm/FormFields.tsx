@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import { FieldTransformer, UIFieldDefinition, useField, useForm, useFormTheme } from '..';
+import { FieldTransformer, UIFieldDefinition, useField, useForm, useFormTheme } from '../..';
 
 interface BaseFieldProps {
   name: string;

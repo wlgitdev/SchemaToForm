@@ -32,7 +32,7 @@ Project Layout:
 ------ tsconfig.node.json
 ------ vite.config.ts
 - packages/
----- schema-to-form/
+---- schema-to-ui/
 ------ dist/
 ------ node modules/
 ------ src/

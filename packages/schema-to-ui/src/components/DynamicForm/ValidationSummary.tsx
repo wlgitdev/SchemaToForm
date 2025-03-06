@@ -1,5 +1,5 @@
 import React from "react";
-import { useForm, useFormTheme } from "..";
+import { useForm, useFormTheme } from "../..";
 
 interface ValidationSummaryProps {
   submitAttempted?: boolean;

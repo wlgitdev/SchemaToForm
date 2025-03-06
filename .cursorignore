@@ -1,1 +1,6 @@
 .env
+packages\node_modules
+packages\schema-to-ui\node_modules
+packages\schema-to-ui\dist
+apps\web\node_modules
+apps\web\dist

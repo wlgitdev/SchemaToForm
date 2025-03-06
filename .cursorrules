@@ -33,14 +33,14 @@
       "action": "switchRole"
     },
     "requirements": {
-      "description": "Generate requirements based on project context",
+      "description": "Generate requirements based on project context. Plan for the simplest implementation.",
       "usage": "/requirements [feature name]",
       "action": "executeWithRole",
       "role": "pm"
     },
     "implement": {
-      "description": "Generate implementation code",
-      "usage": "/implement [component|model|controller|api] [name]",
+      "description": "Generate implementation code. the less the better. after any implementation provide the user with testing instructions.",
+      "usage": "/implement [requirement reference]",
       "action": "executeWithRole",
       "role": "dev"
     },

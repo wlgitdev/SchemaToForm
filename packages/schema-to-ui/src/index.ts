@@ -1,8 +1,8 @@
 // Core Components and Hooks
-export * from "./components/DynamicForm";
-export * from "./components/FormContext";
-export * from "./components/FormFields";
-export * from "./components/FormLayout";
+export * from "./components/DynamicForm/DynamicForm";
+export * from "./components/DynamicForm/FormContext";
+export * from "./components/DynamicForm/FormFields";
+export * from "./components/DynamicForm/FormLayout";
 
 // Contexts
 export * from "./contexts/ThemeContext";
@@ -19,7 +19,7 @@ export * from "./fieldTransformers";
 export * from "./DependencyHandler";
 export * from "./SchemaAdapter";
 export * from "./SchemaRegistry";
-export * from "./schemaValidators";
+export * from "./formSchemaValidators";
 
 // Adapters
 export * from "./MongooseSchemaAdapter";
