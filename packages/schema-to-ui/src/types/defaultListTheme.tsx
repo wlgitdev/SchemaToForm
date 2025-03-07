@@ -10,6 +10,11 @@ export const defaultListTheme: ListTheme = {
         },
         row: 'border-t border-gray-200 hover:bg-gray-50',
         cell: 'px-4 py-2',
+        groupRow: {
+            cell: 'px-4 py-2 font-medium bg-gray-100 cursor-pointer',
+            count: 'text-gray-500 ml-2',
+            expandIcon: 'ml-2 text-gray-400',
+        },
     },
     pagination: {
         container: 'flex items-center justify-between px-4 py-3 bg-white border-t',

@@ -9,6 +9,10 @@ import {
   ColumnDef,
   createColumnHelper,
   SortingState,
+  GroupingState,
+  getGroupedRowModel,
+  getExpandedRowModel,
+  ExpandedState,
 } from "@tanstack/react-table";
 import { ColumnDefinition, DataType, ListSchema, PrimitiveType } from "../../types/ListSchema";
 import { ListHeader } from "./ListHeader";
@@ -30,19 +34,15 @@ const formatCellValue = <T extends object>(
 
   const format = col.format;
   if (!format) {
-    return value as React.ReactNode;
+    return String(value);  
   }
 
   // Handle reference type separately
-  if (col.type === 'reference') {
-    if (!isReferenceValue(value)) {
-      return format.reference?.fallback ?? '-';
-    }
+  if (col.type === 'reference' && isReferenceValue(value)) {
     const labelField = format.reference?.labelField;
-    if (!labelField) {
-      return format.reference?.fallback ?? '-';
-    }
-    return (value[labelField] as React.ReactNode) ?? format.reference?.fallback ?? '-';
+    return labelField && value[labelField] 
+      ? String(value[labelField])  // Ensure string conversion
+      : (format.reference?.fallback ?? '-');
   }
 
   // Handle other types
@@ -152,13 +152,22 @@ const getTypeSortingFn = <TData extends object>(
         return aValue.localeCompare(bValue);
       };
 
-    case 'date':
-      return (rowA: any, rowB: any, columnId: string) => {
-        const a = rowA.getValue(columnId) as Date;
-        const b = rowB.getValue(columnId) as Date;
-        return (a?.getTime() ?? 0) - (b?.getTime() ?? 0);
-      };
-
+      case 'date':
+        return (rowA: any, rowB: any, columnId: string) => {
+          const aValue = rowA.getValue(columnId);
+          const bValue = rowB.getValue(columnId);
+          
+          // Convert to Date objects if they're strings
+          const a = aValue instanceof Date ? aValue : new Date(aValue);
+          const b = bValue instanceof Date ? bValue : new Date(bValue);
+          
+          // Handle invalid dates
+          const aTime = isNaN(a.getTime()) ? 0 : a.getTime();
+          const bTime = isNaN(b.getTime()) ? 0 : b.getTime();
+          
+          return aTime - bTime;
+        };
+        
     case 'number':
       return (rowA: any, rowB: any, columnId: string) => {
         const a = rowA.getValue(columnId) as number;
@@ -223,6 +232,10 @@ export const DynamicList = <TData extends object>({
   const theme = useListTheme();
   const columnHelper = createColumnHelper<TData>();
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [grouping, setGrouping] = useState<GroupingState>(
+    schema.options?.groupBy ? [schema.options.groupBy.field as string] : []
+  );
+  const [expanded, setExpanded] = useState<ExpandedState>({});
 
   // Data fetching with react-query
   const {
@@ -234,36 +247,93 @@ export const DynamicList = <TData extends object>({
     queryFn,
   }) as QueryState<TData>;
 
+  // Initialize expanded state when data changes
+  React.useEffect(() => {
+    if (schema.options?.groupBy?.expanded && data.length > 0) {
+      const newExpanded: ExpandedState = {};
+      data.forEach(row => {
+        const groupValue = row[schema.options!.groupBy!.field as keyof TData];
+        if (isReferenceValue(groupValue)) {
+          newExpanded[`${groupValue.id}`] = true;
+        } else {
+          newExpanded[String(groupValue)] = true;
+        }
+      });
+      setExpanded(newExpanded);
+    }
+  }, [data, schema.options?.groupBy]);
+
   // Configure table columns from schema
-  const columns = React.useMemo<ColumnDef<TData>[]>(() => 
+  const columns = React.useMemo(() => 
   Object.entries(schema.columns).map(([key, col]) => {
     const typedCol = col as ColumnDefinition<TData>;
-    return {
+      return columnHelper.accessor((row: TData) => {
+        const field = typedCol.field as keyof TData;
+        const value = row[field];
+        
+        // For reference types, return the entire reference object for proper grouping
+        if (typedCol.type === 'reference' && isReferenceValue(value)) {
+          return value;
+        }
+        return value;
+      }, {
         id: key,
-      accessorKey: typedCol.field as keyof TData,
       header: typedCol.label,
-        cell: ({ getValue, row }: CellContext<TData, unknown>) => {
+        cell: ({ getValue, row }) => {
           const value = getValue() as DataType;
           return formatCellValue(value, row.original, typedCol);
         },
       enableSorting: typedCol.sortable,
       sortingFn: typedCol.sortable ? getTypeSortingFn(typedCol) : undefined,
-        };
+        // Add grouping configuration for reference types
+        getGroupingValue: (row: TData) => {
+          const field = typedCol.field as keyof TData;
+          const value = row[field];
+          if (typedCol.type === 'reference' && isReferenceValue(value)) {
+            return value.name; // Use the name field for grouping
+          }
+          return value;
+        },
+      });
   }),
     [schema.columns]
   );
 
+  React.useEffect(() => {
+    if (schema.options?.groupBy?.expanded && data.length > 0) {
+      const newExpanded: ExpandedState = {};
+      data.forEach(row => {
+        const field = schema.options!.groupBy!.field as keyof TData;
+        const groupValue = row[field];
+        if (isReferenceValue(groupValue)) {
+          newExpanded[`${groupValue.id}`] = true;
+        } else {
+          newExpanded[String(groupValue)] = true;
+        }
+      });
+      setExpanded(newExpanded);
+    }
+  }, [data, schema.options?.groupBy]);
+  
   // Initialize react-table instance
   const table = useReactTable({
     data,
     columns,
     state: {
       sorting,
+      grouping,
+      expanded,
     },
     onSortingChange: setSorting,
+    onGroupingChange: setGrouping,
+    onExpandedChange: setExpanded,
+    getExpandedRowModel: getExpandedRowModel(),
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getGroupedRowModel: getGroupedRowModel(),
+    enableGrouping: true,
+    enableExpanding: true,
     initialState: {
       pagination: {
         pageSize: schema.options?.pagination?.pageSize ?? 10,
@@ -282,8 +352,8 @@ export const DynamicList = <TData extends object>({
   return (
     <div className={className}>
       <table className={theme.table.container}>
-        <ListHeader table={table} />
-        <ListBody table={table} />
+        <ListHeader table={table} showGroupCounts={schema.options?.groupBy?.showCounts} />
+        <ListBody table={table} showGroupCounts={schema.options?.groupBy?.showCounts} />
       </table>
       {schema.options?.pagination?.enabled && (
         <div className={theme.pagination.container}>

@@ -11,6 +11,11 @@ export interface ListTheme {
       };
       row: string;
       cell: string;
+    groupRow: {
+      cell: string;
+      count: string;
+      expandIcon: string;
+    };
     };
     pagination: {
       container: string;

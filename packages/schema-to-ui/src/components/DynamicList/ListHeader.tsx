@@ -3,9 +3,13 @@ import { useListTheme } from '../../contexts/ListThemeContext';
 
 interface ListHeaderProps<T> {
   table: Table<T>;
+  showGroupCounts?: boolean;
 }
 
-export const ListHeader = <T extends object>({ table }: ListHeaderProps<T>) => {
+export const ListHeader = <T extends object>({ 
+  table, 
+  showGroupCounts 
+}: ListHeaderProps<T>) => {
   const theme = useListTheme();
 
   return (
@@ -18,16 +22,15 @@ export const ListHeader = <T extends object>({ table }: ListHeaderProps<T>) => {
               className={theme.table.header.cell}
               onClick={header.column.getToggleSortingHandler()}
             >
-              {header.isPlaceholder ? null : 
-                flexRender(
-                  header.column.columnDef.header,
-                  header.getContext()
-                )
-              }
+              {header.isPlaceholder ? null : (
+                <>
+                  {flexRender(header.column.columnDef.header, header.getContext())}
               {header.column.getIsSorted() && (
                 <span className={theme.table.header.sortIcon}>
                   {header.column.getIsSorted() === 'asc' ? ' ↑' : ' ↓'}
                 </span>
+                  )}
+                </>
               )}
             </th>
           ))}
