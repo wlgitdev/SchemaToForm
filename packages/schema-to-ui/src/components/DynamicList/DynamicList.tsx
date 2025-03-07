@@ -138,6 +138,81 @@ type QueryState<TData> = {
   isLoading: boolean;
   error: unknown;
 };
+const getTypeSortingFn = <TData extends object>(
+  col: ColumnDefinition<TData>
+) => {
+  switch (col.type) {
+    case 'reference':
+      return (rowA: any, rowB: any, columnId: string) => {
+        const a = rowA.getValue(columnId) as Record<string, unknown>;
+        const b = rowB.getValue(columnId) as Record<string, unknown>;
+        const labelField = col.format?.reference?.labelField;
+        const aValue = (a?.[labelField as string] as string) ?? '';
+        const bValue = (b?.[labelField as string] as string) ?? '';
+        return aValue.localeCompare(bValue);
+      };
+
+    case 'date':
+      return (rowA: any, rowB: any, columnId: string) => {
+        const a = rowA.getValue(columnId) as Date;
+        const b = rowB.getValue(columnId) as Date;
+        return (a?.getTime() ?? 0) - (b?.getTime() ?? 0);
+      };
+
+    case 'number':
+      return (rowA: any, rowB: any, columnId: string) => {
+        const a = rowA.getValue(columnId) as number;
+        const b = rowB.getValue(columnId) as number;
+        return (a ?? 0) - (b ?? 0);
+      };
+
+    case 'boolean':
+      return (rowA: any, rowB: any, columnId: string) => {
+        const a = rowA.getValue(columnId) as boolean;
+        const b = rowB.getValue(columnId) as boolean;
+        return (a === b) ? 0 : a ? -1 : 1;
+      };
+
+    case 'array':
+      return (rowA: any, rowB: any, columnId: string) => {
+        const a = rowA.getValue(columnId) as unknown[];
+        const b = rowB.getValue(columnId) as unknown[];
+        const format = col.format?.array;
+        
+        // If there's a custom item formatter, use it for sorting
+        if (format?.itemFormatter) {
+          const aStr = (a ?? []).map(item => format.itemFormatter!(item)).join(',');
+          const bStr = (b ?? []).map(item => format.itemFormatter!(item)).join(',');
+          return aStr.localeCompare(bStr);
+        }
+        
+        // Default array sorting
+        return (a ?? []).join(',').localeCompare((b ?? []).join(','));
+      };
+
+    case 'text':
+    default:
+      return (rowA: any, rowB: any, columnId: string) => {
+        const a = String(rowA.getValue(columnId) ?? '');
+        const b = String(rowB.getValue(columnId) ?? '');
+        
+        // Apply text transformations if specified
+        const transform = col.format?.text?.transform;
+        if (transform) {
+          switch (transform) {
+            case 'uppercase':
+              return a.toUpperCase().localeCompare(b.toUpperCase());
+            case 'lowercase':
+              return a.toLowerCase().localeCompare(b.toLowerCase());
+            case 'capitalize':
+              return a.charAt(0).toUpperCase().localeCompare(b.charAt(0).toUpperCase());
+          }
+        }
+        
+        return a.localeCompare(b);
+      };
+  }
+};
 
 export const DynamicList = <TData extends object>({
   schema,
@@ -161,17 +236,20 @@ export const DynamicList = <TData extends object>({
 
   // Configure table columns from schema
   const columns = React.useMemo<ColumnDef<TData>[]>(() => 
-    Object.entries(schema.columns).map(([key, col]) => ({
+  Object.entries(schema.columns).map(([key, col]) => {
+    const typedCol = col as ColumnDefinition<TData>;
+    return {
         id: key,
-        accessorKey: (col as ColumnDefinition<TData>).field as keyof TData,
-        header: (col as ColumnDefinition<TData>).label,
+      accessorKey: typedCol.field as keyof TData,
+      header: typedCol.label,
         cell: ({ getValue, row }: CellContext<TData, unknown>) => {
           const value = getValue() as DataType;
-          const typedCol = col as ColumnDefinition<TData>;
           return formatCellValue(value, row.original, typedCol);
         },
-        enableSorting: (col as ColumnDefinition<TData>).sortable,
-      })),
+      enableSorting: typedCol.sortable,
+      sortingFn: typedCol.sortable ? getTypeSortingFn(typedCol) : undefined,
+        };
+  }),
     [schema.columns]
   );
 

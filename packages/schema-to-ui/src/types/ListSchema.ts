@@ -76,7 +76,7 @@ export interface ColumnDefinition<T = unknown> {
   field: keyof T;
   type: "text" | "number" | "date" | "boolean" | "array" | "reference" | "action";
   width?: number | string;
-  sortable?: boolean;
+  sortable: boolean;
   filterable?: boolean;
   visible?: boolean | ((row: T) => boolean);
   className?: string | ((row: T) => string);
