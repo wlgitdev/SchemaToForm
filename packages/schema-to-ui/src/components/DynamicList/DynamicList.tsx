@@ -34,13 +34,13 @@ const formatCellValue = <T extends object>(
 
   const format = col.format;
   if (!format) {
-    return String(value);  
+    return String(value);
   }
 
   // Handle reference type separately
   if (col.type === 'reference' && isReferenceValue(value)) {
     const labelField = format.reference?.labelField;
-    return labelField && value[labelField] 
+    return labelField && value[labelField]
       ? String(value[labelField])  // Ensure string conversion
       : (format.reference?.fallback ?? '-');
   }
@@ -97,7 +97,7 @@ const formatCellValue = <T extends object>(
     case 'boolean': {
       const boolValue = typedValue as boolean;
       if (format.boolean) {
-        return boolValue 
+        return boolValue
           ? (format.boolean.trueText ?? 'Yes')
           : (format.boolean.falseText ?? 'No');
       }
@@ -107,10 +107,10 @@ const formatCellValue = <T extends object>(
     case 'array': {
       const arrayValue = typedValue as PrimitiveType[];
       if (format.array) {
-        const items = format.array.maxItems 
-          ? arrayValue.slice(0, format.array.maxItems) 
+        const items = format.array.maxItems
+          ? arrayValue.slice(0, format.array.maxItems)
           : arrayValue;
-        const formatted = items.map(item => 
+        const formatted = items.map(item =>
           format.array?.itemFormatter?.(item) ?? String(item)
         );
         if (format.array.maxItems && arrayValue.length > format.array.maxItems) {
@@ -152,22 +152,22 @@ const getTypeSortingFn = <TData extends object>(
         return aValue.localeCompare(bValue);
       };
 
-      case 'date':
-        return (rowA: any, rowB: any, columnId: string) => {
-          const aValue = rowA.getValue(columnId);
-          const bValue = rowB.getValue(columnId);
-          
-          // Convert to Date objects if they're strings
-          const a = aValue instanceof Date ? aValue : new Date(aValue);
-          const b = bValue instanceof Date ? bValue : new Date(bValue);
-          
-          // Handle invalid dates
-          const aTime = isNaN(a.getTime()) ? 0 : a.getTime();
-          const bTime = isNaN(b.getTime()) ? 0 : b.getTime();
-          
-          return aTime - bTime;
-        };
-        
+    case 'date':
+      return (rowA: any, rowB: any, columnId: string) => {
+        const aValue = rowA.getValue(columnId);
+        const bValue = rowB.getValue(columnId);
+
+        // Convert to Date objects if they're strings
+        const a = aValue instanceof Date ? aValue : new Date(aValue);
+        const b = bValue instanceof Date ? bValue : new Date(bValue);
+
+        // Handle invalid dates
+        const aTime = isNaN(a.getTime()) ? 0 : a.getTime();
+        const bTime = isNaN(b.getTime()) ? 0 : b.getTime();
+
+        return aTime - bTime;
+      };
+
     case 'number':
       return (rowA: any, rowB: any, columnId: string) => {
         const a = rowA.getValue(columnId) as number;
@@ -187,14 +187,14 @@ const getTypeSortingFn = <TData extends object>(
         const a = rowA.getValue(columnId) as unknown[];
         const b = rowB.getValue(columnId) as unknown[];
         const format = col.format?.array;
-        
+
         // If there's a custom item formatter, use it for sorting
         if (format?.itemFormatter) {
           const aStr = (a ?? []).map(item => format.itemFormatter!(item)).join(',');
           const bStr = (b ?? []).map(item => format.itemFormatter!(item)).join(',');
           return aStr.localeCompare(bStr);
         }
-        
+
         // Default array sorting
         return (a ?? []).join(',').localeCompare((b ?? []).join(','));
       };
@@ -204,7 +204,7 @@ const getTypeSortingFn = <TData extends object>(
       return (rowA: any, rowB: any, columnId: string) => {
         const a = String(rowA.getValue(columnId) ?? '');
         const b = String(rowB.getValue(columnId) ?? '');
-        
+
         // Apply text transformations if specified
         const transform = col.format?.text?.transform;
         if (transform) {
@@ -217,7 +217,7 @@ const getTypeSortingFn = <TData extends object>(
               return a.charAt(0).toUpperCase().localeCompare(b.charAt(0).toUpperCase());
           }
         }
-        
+
         return a.localeCompare(b);
       };
   }
@@ -240,7 +240,7 @@ export const DynamicList = <TData extends object>({
   const {
     data = [],
     isLoading,
-    error 
+    error
   } = useQuery<TData[], Error>({
     queryKey,
     queryFn,
@@ -248,11 +248,11 @@ export const DynamicList = <TData extends object>({
 
   const initialExpanded = React.useMemo(() => {
     if (!schema.options?.groupBy?.expanded) return {};
-    
+
     // Create a map of all unique group values
     const groupMap: Record<string, boolean> = {};
     const groupField = schema.options.groupBy.field as string;
-    
+
     data.forEach(row => {
       const value = row[schema.options!.groupBy!.field as keyof TData];
       if (isReferenceValue(value)) {
@@ -262,22 +262,20 @@ export const DynamicList = <TData extends object>({
         groupMap[`${groupField}:${String(value)}`] = true;
       }
     });
-    
+
     return groupMap;
   }, [data, schema.options?.groupBy]);
 
   const [expanded, setExpanded] = useState<ExpandedState>(initialExpanded);
 
-  const [expanded, setExpanded] = useState<ExpandedState>(initialExpanded);
-
   // Configure table columns from schema
-  const columns = React.useMemo(() => 
-  Object.entries(schema.columns).map(([key, col]) => {
-    const typedCol = col as ColumnDefinition<TData>;
+  const columns = React.useMemo(() =>
+    Object.entries(schema.columns).map(([key, col]) => {
+      const typedCol = col as ColumnDefinition<TData>;
       return columnHelper.accessor((row: TData) => {
         const field = typedCol.field as keyof TData;
         const value = row[field];
-        
+
         // For reference types, return the entire reference object for proper grouping
         if (typedCol.type === 'reference' && isReferenceValue(value)) {
           return value;
@@ -285,41 +283,30 @@ export const DynamicList = <TData extends object>({
         return value;
       }, {
         id: key,
-      header: typedCol.label,
+        header: typedCol.label,
         cell: ({ getValue, row }) => {
           const value = getValue() as DataType;
           return formatCellValue(value, row.original, typedCol);
         },
-      enableSorting: typedCol.sortable,
-      sortingFn: typedCol.sortable ? getTypeSortingFn(typedCol) : undefined,
-      // Only enable grouping for the column specified in schema.options.groupBy
-      enableGrouping: schema.options?.groupBy?.field === typedCol.field,
-      // Disable aggregation for non-grouped columns by setting to undefined
-      aggregationFn: undefined,
-      getGroupingValue: schema.options?.groupBy?.field === typedCol.field 
-        ? (row: TData) => {
-      // Only enable grouping for the column specified in schema.options.groupBy
-      enableGrouping: schema.options?.groupBy?.field === typedCol.field,
-      // Disable aggregation for non-grouped columns by setting to undefined
-      aggregationFn: undefined,
-      getGroupingValue: schema.options?.groupBy?.field === typedCol.field 
-        ? (row: TData) => {
-          const field = typedCol.field as keyof TData;
-          const value = row[field];
-          if (typedCol.type === 'reference' && isReferenceValue(value)) {
-              return value.name;
-            }
-            return value;
+        enableSorting: typedCol.sortable,
+        sortingFn: typedCol.sortable ? getTypeSortingFn(typedCol) : undefined,
+        // Only enable grouping for the column specified in schema.options.groupBy
+        enableGrouping: schema.options?.groupBy?.field === typedCol.field,
+        // Disable aggregation for non-grouped columns by setting to undefined
+        aggregationFn: undefined,
+        getGroupingValue: schema.options?.groupBy?.field === typedCol.field
+          ? (row: TData) => {
+            const field = typedCol.field as keyof TData;
+            const value = row[field];
+            if (typedCol.type === 'reference' && isReferenceValue(value)) {
               return value.name;
             }
             return value;
           }
-        : undefined,
-        : undefined,
+          : undefined,
       });
-  }),
-  [schema.columns, schema.options?.groupBy]
-  [schema.columns, schema.options?.groupBy]
+    }),
+    [schema.columns, schema.options?.groupBy]
   );
 
   React.useEffect(() => {
@@ -327,7 +314,7 @@ export const DynamicList = <TData extends object>({
       setExpanded(initialExpanded);
     }
   }, [initialExpanded, schema.options?.groupBy]);
-  
+
   // Initialize react-table instance
   const table = useReactTable({
     data,
@@ -347,14 +334,11 @@ export const DynamicList = <TData extends object>({
     getGroupedRowModel: getGroupedRowModel(),
     enableGrouping: true,
     enableExpanding: true,
-  groupedColumnMode: 'reorder',
-  groupedColumnMode: 'reorder',
+    groupedColumnMode: 'reorder',
     initialState: {
       pagination: {
         pageSize: schema.options?.pagination?.pageSize ?? 10,
       },
-      grouping: schema.options?.groupBy ? [schema.options.groupBy.field as string] : [],
-      expanded: schema.options?.groupBy?.expanded ? true : {},
       grouping: schema.options?.groupBy ? [schema.options.groupBy.field as string] : [],
       expanded: schema.options?.groupBy?.expanded ? true : {},
     },
