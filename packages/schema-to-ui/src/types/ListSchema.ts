@@ -86,6 +86,7 @@ export interface ColumnDefinition<T = unknown> {
   visible?: boolean | ((row: T) => boolean);
   className?: string | ((row: T) => string);
   format?: ColumnFormat<T>;
+  enableGrouping?: boolean; 
   
   // Reference configuration
   reference?: {
