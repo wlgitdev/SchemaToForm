@@ -268,6 +268,8 @@ export const DynamicList = <TData extends object>({
 
   const [expanded, setExpanded] = useState<ExpandedState>(initialExpanded);
 
+  const [expanded, setExpanded] = useState<ExpandedState>(initialExpanded);
+
   // Configure table columns from schema
   const columns = React.useMemo(() => 
   Object.entries(schema.columns).map(([key, col]) => {
@@ -296,16 +298,27 @@ export const DynamicList = <TData extends object>({
       aggregationFn: undefined,
       getGroupingValue: schema.options?.groupBy?.field === typedCol.field 
         ? (row: TData) => {
+      // Only enable grouping for the column specified in schema.options.groupBy
+      enableGrouping: schema.options?.groupBy?.field === typedCol.field,
+      // Disable aggregation for non-grouped columns by setting to undefined
+      aggregationFn: undefined,
+      getGroupingValue: schema.options?.groupBy?.field === typedCol.field 
+        ? (row: TData) => {
           const field = typedCol.field as keyof TData;
           const value = row[field];
           if (typedCol.type === 'reference' && isReferenceValue(value)) {
               return value.name;
             }
             return value;
+              return value.name;
+            }
+            return value;
           }
+        : undefined,
         : undefined,
       });
   }),
+  [schema.columns, schema.options?.groupBy]
   [schema.columns, schema.options?.groupBy]
   );
 
@@ -335,10 +348,13 @@ export const DynamicList = <TData extends object>({
     enableGrouping: true,
     enableExpanding: true,
   groupedColumnMode: 'reorder',
+  groupedColumnMode: 'reorder',
     initialState: {
       pagination: {
         pageSize: schema.options?.pagination?.pageSize ?? 10,
       },
+      grouping: schema.options?.groupBy ? [schema.options.groupBy.field as string] : [],
+      expanded: schema.options?.groupBy?.expanded ? true : {},
       grouping: schema.options?.groupBy ? [schema.options.groupBy.field as string] : [],
       expanded: schema.options?.groupBy?.expanded ? true : {},
     },
