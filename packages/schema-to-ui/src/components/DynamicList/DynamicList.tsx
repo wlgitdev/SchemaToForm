@@ -235,7 +235,6 @@ export const DynamicList = <TData extends object>({
   const [grouping, setGrouping] = useState<GroupingState>(
     schema.options?.groupBy ? [schema.options.groupBy.field as string] : []
   );
-  const [expanded, setExpanded] = useState<ExpandedState>({});
 
   // Data fetching with react-query
   const {
@@ -247,21 +246,27 @@ export const DynamicList = <TData extends object>({
     queryFn,
   }) as QueryState<TData>;
 
-  // Initialize expanded state when data changes
-  React.useEffect(() => {
-    if (schema.options?.groupBy?.expanded && data.length > 0) {
-      const newExpanded: ExpandedState = {};
-      data.forEach(row => {
-        const groupValue = row[schema.options!.groupBy!.field as keyof TData];
-        if (isReferenceValue(groupValue)) {
-          newExpanded[`${groupValue.id}`] = true;
-        } else {
-          newExpanded[String(groupValue)] = true;
-        }
-      });
-      setExpanded(newExpanded);
-    }
+  const initialExpanded = React.useMemo(() => {
+    if (!schema.options?.groupBy?.expanded) return {};
+    
+    // Create a map of all unique group values
+    const groupMap: Record<string, boolean> = {};
+    const groupField = schema.options.groupBy.field as string;
+    
+    data.forEach(row => {
+      const value = row[schema.options!.groupBy!.field as keyof TData];
+      if (isReferenceValue(value)) {
+        // For reference types, use the name field as the group value
+        groupMap[`${groupField}:${value.name}`] = true;
+      } else {
+        groupMap[`${groupField}:${String(value)}`] = true;
+      }
+    });
+    
+    return groupMap;
   }, [data, schema.options?.groupBy]);
+
+  const [expanded, setExpanded] = useState<ExpandedState>(initialExpanded);
 
   // Configure table columns from schema
   const columns = React.useMemo(() => 
@@ -285,35 +290,30 @@ export const DynamicList = <TData extends object>({
         },
       enableSorting: typedCol.sortable,
       sortingFn: typedCol.sortable ? getTypeSortingFn(typedCol) : undefined,
-        // Add grouping configuration for reference types
-        getGroupingValue: (row: TData) => {
+      // Only enable grouping for the column specified in schema.options.groupBy
+      enableGrouping: schema.options?.groupBy?.field === typedCol.field,
+      // Disable aggregation for non-grouped columns by setting to undefined
+      aggregationFn: undefined,
+      getGroupingValue: schema.options?.groupBy?.field === typedCol.field 
+        ? (row: TData) => {
           const field = typedCol.field as keyof TData;
           const value = row[field];
           if (typedCol.type === 'reference' && isReferenceValue(value)) {
-            return value.name; // Use the name field for grouping
+              return value.name;
+            }
+            return value;
           }
-          return value;
-        },
+        : undefined,
       });
   }),
-    [schema.columns]
+  [schema.columns, schema.options?.groupBy]
   );
 
   React.useEffect(() => {
-    if (schema.options?.groupBy?.expanded && data.length > 0) {
-      const newExpanded: ExpandedState = {};
-      data.forEach(row => {
-        const field = schema.options!.groupBy!.field as keyof TData;
-        const groupValue = row[field];
-        if (isReferenceValue(groupValue)) {
-          newExpanded[`${groupValue.id}`] = true;
-        } else {
-          newExpanded[String(groupValue)] = true;
-        }
-      });
-      setExpanded(newExpanded);
+    if (schema.options?.groupBy?.expanded) {
+      setExpanded(initialExpanded);
     }
-  }, [data, schema.options?.groupBy]);
+  }, [initialExpanded, schema.options?.groupBy]);
   
   // Initialize react-table instance
   const table = useReactTable({
@@ -334,10 +334,13 @@ export const DynamicList = <TData extends object>({
     getGroupedRowModel: getGroupedRowModel(),
     enableGrouping: true,
     enableExpanding: true,
+  groupedColumnMode: 'reorder',
     initialState: {
       pagination: {
         pageSize: schema.options?.pagination?.pageSize ?? 10,
       },
+      grouping: schema.options?.groupBy ? [schema.options.groupBy.field as string] : [],
+      expanded: schema.options?.groupBy?.expanded ? true : {},
     },
   });
 
