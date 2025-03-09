@@ -16,6 +16,15 @@ export const defaultListTheme: ListTheme = {
             expandIcon: 'ml-2 text-gray-400',
         },
     },
+    selection: {
+        checkbox: 'h-4 w-4 rounded border-gray-300 text-blue-600',
+        toolbar: {
+            container: 'bg-white px-4 py-2 border-t flex items-center justify-between',
+            count: 'text-sm text-gray-700',
+            actions: 'flex gap-2',
+            button: 'px-3 py-1 text-sm rounded-md border border-gray-300 hover:bg-gray-50',
+        },
+    },
     pagination: {
         container: 'flex items-center justify-between px-4 py-3 bg-white border-t',
         button: 'px-3 py-1 border rounded disabled:opacity-50',

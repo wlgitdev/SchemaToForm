@@ -95,6 +95,18 @@ const testSchema: ListSchema<TestItem> = {
         },
       },
     },
+    actions: {
+      label: "Actions",
+      field: "actions",
+      type: "action",
+      format: {
+        action: {
+          label: "View",
+          variant: "primary",
+        }
+      },
+      sortable: false
+    }
   },
   options: {
     pagination: {
@@ -124,6 +136,8 @@ const testSchema: ListSchema<TestItem> = {
     },
 
     // Row actions
+
+    // Add row-level actions
     rowActions: {
       onClick: (row) => console.log("Row clicked:", row),
       onDoubleClick: (row) => console.log("Row double clicked:", row),
@@ -133,19 +147,34 @@ const testSchema: ListSchema<TestItem> = {
     selectedActions: [
       {
         label: "Delete Selected",
-        onClick: (selectedRows) => console.log("Delete:", selectedRows),
-        disabled: (selectedRows) => selectedRows.length === 0,
+        onClick: (selectedRows) => {
+          console.log("Delete:", selectedRows);
+          alert(`Would delete ${selectedRows.length} items`);
+        },
+        // Disable if more than 3 items selected
+        disabled: (selectedRows) => selectedRows.length > 3,
       },
       {
         label: "Export Selected",
-        onClick: (selectedRows) => console.log("Export:", selectedRows),
-        disabled: (selectedRows) => selectedRows.length === 0,
+        onClick: (selectedRows) => {
+          console.log("Export:", selectedRows);
+          alert(`Would export ${selectedRows.length} items`);
+        },
       },
+      {
+        label: "Activate Selected",
+        onClick: (selectedRows) => {
+          console.log("Activate:", selectedRows);
+          alert(`Would activate ${selectedRows.length} items`);
+        },
+        // Only enable if all selected items are inactive
+        disabled: (selectedRows) => !selectedRows.every(row => !row.isActive),
+      }
     ],
   },
 };
 
-const mockData: TestItem[] = [
+const initialMockData: TestItem[] = [
   {
     id: 1,
     name: "John Doe",
@@ -264,6 +293,24 @@ const mockData: TestItem[] = [
     tags: ["risk management", "workflow optimization", "logistics"],
   },
 ];
+
+const generateActions = (name: string): TestItem['actions'] => [
+  {
+    label: "Edit",
+    variant: "primary",
+    onClick: () => console.log(`Edit clicked for ${name}`),
+  },
+  {
+    label: "Delete",
+    variant: "secondary",
+    onClick: () => console.log(`Delete clicked for ${name}`),
+  }
+];
+
+const mockData: TestItem[] = initialMockData.map(item => ({
+  ...item,
+  actions: generateActions(item.name)
+}));
 
 const queryClient = new QueryClient();
 

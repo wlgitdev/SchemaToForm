@@ -2,33 +2,48 @@ import { z } from 'zod';
 import { ReactNode } from 'react';
 
 export interface ListTheme {
-    table: {
+  table: {
+    container: string;
+    header: {
       container: string;
-      header: {
-        container: string;
-        cell: string;
-        sortIcon: string;
-      };
-      row: string;
       cell: string;
+      sortIcon: string;
+    };
+    row: string;
+    cell: string;
     groupRow: {
       cell: string;
       count: string;
       expandIcon: string;
     };
-    };
-    pagination: {
+  };
+  pagination: {
+    container: string;
+    button: string;
+    text: string;
+  };
+  selection: {
+    checkbox: string;
+    toolbar: {
       container: string;
+      count: string;
+      actions: string;
       button: string;
-      text: string;
     };
-    loading: string;
-    error: string;
+  };
+  loading: string;
+  error: string;
 }
 
+export type ActionItem = {
+  label: string;
+  variant?: "primary" | "secondary" | "text" | "link";
+  icon?: string;
+  onClick: () => void;
+};
 // Base types for type-safety
 export type PrimitiveType = string | number | boolean | Date;
-export type DataType = PrimitiveType | PrimitiveType[];
+export type DataType = PrimitiveType | PrimitiveType[] | ActionItem[];
 
 // Unified format configurations
 export interface BaseFormat<T> {
@@ -86,8 +101,8 @@ export interface ColumnDefinition<T = unknown> {
   visible?: boolean | ((row: T) => boolean);
   className?: string | ((row: T) => string);
   format?: ColumnFormat<T>;
-  enableGrouping?: boolean; 
-  
+  enableGrouping?: boolean;
+
   // Reference configuration
   reference?: {
     queryKey: readonly unknown[];
@@ -101,7 +116,7 @@ export interface ListSchema<T = unknown> {
   columns: {
     [K in keyof T]?: ColumnDefinition<T>;
   };
-  
+
   options?: {
     pagination?: {
       enabled: boolean;
@@ -163,5 +178,10 @@ export const listSchemaValidator = z.object({
       expanded: z.boolean().optional(),
       showCounts: z.boolean().optional()
     }).optional(),
+    selectedActions: z.array(z.object({
+      label: z.string(),
+      onClick: z.function(),
+      disabled: z.union([z.boolean(), z.function()]).optional()
+    })).optional()
   }).optional()
 });

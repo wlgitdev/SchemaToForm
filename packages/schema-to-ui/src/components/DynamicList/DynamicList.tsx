@@ -1,9 +1,11 @@
-import React, { ReactElement, useState } from "react";
+import React, { ReactElement, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   useReactTable,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
+  RowSelectionState,
   getSortedRowModel,
   CellContext,
   ColumnDef,
@@ -14,9 +16,10 @@ import {
   getExpandedRowModel,
   ExpandedState,
 } from "@tanstack/react-table";
-import { ColumnDefinition, DataType, ListSchema, PrimitiveType } from "../../types/ListSchema";
+import { ActionItem, ColumnDefinition, DataType, ListSchema, PrimitiveType } from "../../types/ListSchema";
 import { ListHeader } from "./ListHeader";
 import { ListBody } from "./ListBody";
+import { SelectionToolbar } from "./SelectionToolbar";
 import { useListTheme } from "../../contexts/ListThemeContext";
 
 const isReferenceValue = (value: unknown): value is Record<string, unknown> => {
@@ -35,6 +38,28 @@ const formatCellValue = <T extends object>(
   const format = col.format;
   if (!format) {
     return String(value);
+  }
+
+  // Add handling for action type
+  if (col.type === 'action' && Array.isArray(value)) {
+    const actions = value as ActionItem[];  // Type assertion here is safe because we've verified the column type
+    return (
+      <div className="flex gap-2">
+        {actions.map((action, index) => (
+          <button
+            key={index}
+            onClick={action.onClick}
+            className={`px-2 py-1 text-sm rounded ${
+              action.variant === 'primary' 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-gray-200 text-gray-700'
+            }`}
+          >
+            {action.label}
+          </button>
+        ))}
+      </div>
+    );
   }
 
   // Handle reference type separately
@@ -126,20 +151,20 @@ const formatCellValue = <T extends object>(
   }
 };
 
-type DynamicListProps<TData extends object> = {
-  schema: ListSchema<TData>;
+type DynamicListProps<T extends object> = {
+  schema: ListSchema<T>;
   queryKey: readonly unknown[];
-  queryFn: () => Promise<TData[]>;
+  queryFn: () => Promise<T[]>;
   className?: string;
 };
 
-type QueryState<TData> = {
-  data: TData[];
+type QueryState<T> = {
+  data: T[];
   isLoading: boolean;
   error: unknown;
 };
-const getTypeSortingFn = <TData extends object>(
-  col: ColumnDefinition<TData>
+const getTypeSortingFn = <T extends object>(
+  col: ColumnDefinition<T>
 ) => {
   switch (col.type) {
     case 'reference':
@@ -223,28 +248,29 @@ const getTypeSortingFn = <TData extends object>(
   }
 };
 
-export const DynamicList = <TData extends object>({
+export const DynamicList = <T extends object>({
   schema,
   queryKey,
   queryFn,
   className,
-}: DynamicListProps<TData>) => {
+}: DynamicListProps<T>) => {
   const theme = useListTheme();
-  const columnHelper = createColumnHelper<TData>();
+  const columnHelper = createColumnHelper<T>();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [grouping, setGrouping] = useState<GroupingState>(
     schema.options?.groupBy ? [schema.options.groupBy.field as string] : []
   );
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   // Data fetching with react-query
   const {
     data = [],
     isLoading,
     error
-  } = useQuery<TData[], Error>({
+  } = useQuery<T[], Error>({
     queryKey,
     queryFn,
-  }) as QueryState<TData>;
+  }) as QueryState<T>;
 
   const initialExpanded = React.useMemo(() => {
     if (!schema.options?.groupBy?.expanded) return {};
@@ -254,7 +280,7 @@ export const DynamicList = <TData extends object>({
     const groupField = schema.options.groupBy.field as string;
 
     data.forEach(row => {
-      const value = row[schema.options!.groupBy!.field as keyof TData];
+      const value = row[schema.options!.groupBy!.field as keyof T];
       if (isReferenceValue(value)) {
         // For reference types, use the name field as the group value
         groupMap[`${groupField}:${value.name}`] = true;
@@ -269,47 +295,81 @@ export const DynamicList = <TData extends object>({
   const [expanded, setExpanded] = useState<ExpandedState>(initialExpanded);
 
   // Configure table columns from schema
-  const columns = React.useMemo(() =>
-    Object.entries(schema.columns).map(([key, col]) => {
-      const typedCol = col as ColumnDefinition<TData>;
-      return columnHelper.accessor((row: TData) => {
-        const field = typedCol.field as keyof TData;
-        const value = row[field];
+  const columns = useMemo(() => {
+    const cols: ColumnDef<T, any>[] = [];
 
-        // For reference types, return the entire reference object for proper grouping
-        if (typedCol.type === 'reference' && isReferenceValue(value)) {
-          return value;
-        }
-        return value;
-      }, {
-        id: key,
-        header: typedCol.label,
-        cell: ({ getValue, row }) => {
-          const value = getValue() as DataType;
-          return formatCellValue(value, row.original, typedCol);
-        },
-        enableSorting: typedCol.sortable,
-        sortingFn: typedCol.sortable ? getTypeSortingFn(typedCol) : undefined,
-        // Only enable grouping for the column specified in schema.options.groupBy
-        enableGrouping: schema.options?.groupBy?.field === typedCol.field,
-        // Disable aggregation for non-grouped columns by setting to undefined
-        aggregationFn: undefined,
-        getGroupingValue: schema.options?.groupBy?.field === typedCol.field
-          ? (row: TData) => {
-            const field = typedCol.field as keyof TData;
-            const value = row[field];
-            if (typedCol.type === 'reference' && isReferenceValue(value)) {
-              return value.name;
-            }
+    // Add selection column if enabled
+    if (schema.options?.selection?.enabled) {
+      cols.push(
+        columnHelper.display({
+          id: 'select',
+          header: ({ table }) => (
+            <input
+              type="checkbox"
+              checked={table.getIsAllRowsSelected()}
+              onChange={table.getToggleAllRowsSelectedHandler()}
+              className={theme?.selection?.checkbox}
+            />
+          ),
+          cell: ({ row }) => (
+            <input
+              type="checkbox"
+              checked={row.getIsSelected()}
+              onChange={row.getToggleSelectedHandler()}
+              className={theme?.selection?.checkbox}
+            />
+          ),
+          enableSorting: false,
+          enableGrouping: false,
+        })
+      );
+    }
+
+    // Add schema-defined columns
+    Object.entries(schema.columns).forEach(([key, col]) => {
+      const typedCol = col as ColumnDefinition<T>;
+      cols.push(
+        columnHelper.accessor((row: T) => {
+          const field = typedCol.field as keyof T;
+          const value = row[field];
+
+          // For reference types, return the entire reference object for proper grouping
+          if (typedCol.type === 'reference' && isReferenceValue(value)) {
             return value;
           }
-          : undefined,
-      });
-    }),
-    [schema.columns, schema.options?.groupBy]
-  );
+          return value;
+        }, {
+          id: key,
+          header: typedCol.label,
+          cell: ({ getValue, row }) => {
+            const value = getValue() as DataType;
+            return formatCellValue(value, row.original, typedCol);
+          },
+          enableSorting: typedCol.sortable,
+          sortingFn: typedCol.sortable ? getTypeSortingFn(typedCol) : undefined,
+          // Only enable grouping for the column specified in schema.options.groupBy
+          enableGrouping: schema.options?.groupBy?.field === typedCol.field,
+          // Disable aggregation for non-grouped columns by setting to undefined
+          aggregationFn: undefined,
+          getGroupingValue: schema.options?.groupBy?.field === typedCol.field
+            ? (row: T) => {
+              const field = typedCol.field as keyof T;
+              const value = row[field];
+              if (typedCol.type === 'reference' && isReferenceValue(value)) {
+                return value.name;
+              }
+              return value;
+            }
+            : undefined,
+        })
+      );
+    });
 
-  React.useEffect(() => {
+    return cols;
+  }, [schema.columns, schema.options?.groupBy, columnHelper, theme?.selection?.checkbox]);
+
+
+  useEffect(() => {
     if (schema.options?.groupBy?.expanded) {
       setExpanded(initialExpanded);
     }
@@ -317,9 +377,10 @@ export const DynamicList = <TData extends object>({
 
   // Initialize react-table instance
   const table = useReactTable({
-    data,
+    data: data ?? [],
     columns,
     state: {
+      rowSelection,
       sorting,
       grouping,
       expanded,
@@ -328,7 +389,11 @@ export const DynamicList = <TData extends object>({
     onGroupingChange: setGrouping,
     onExpandedChange: setExpanded,
     getExpandedRowModel: getExpandedRowModel(),
+    enableRowSelection: true,
+    enableMultiRowSelection: schema.options?.selection?.type === 'multi',
+    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getGroupedRowModel: getGroupedRowModel(),
@@ -344,6 +409,14 @@ export const DynamicList = <TData extends object>({
     },
   });
 
+  const selectedRows = useMemo(() =>
+    table.getSelectedRowModel().rows.map(row => row.original as T),
+    [table, rowSelection]
+  );
+  // Call the onSelect callback when selection changes
+  useEffect(() => {
+    schema.options?.selection?.onSelect?.(selectedRows);
+  }, [selectedRows]);
   if (isLoading) {
     return <div className={theme.loading}>Loading...</div>;
   }
@@ -354,6 +427,11 @@ export const DynamicList = <TData extends object>({
 
   return (
     <div className={className}>
+      <SelectionToolbar
+        selectedRows={selectedRows}
+        selectedActions={schema.options?.selectedActions}
+        theme={theme?.selection?.toolbar}
+      />
       <table className={theme.table.container}>
         <ListHeader table={table} showGroupCounts={schema.options?.groupBy?.showCounts} />
         <ListBody table={table} showGroupCounts={schema.options?.groupBy?.showCounts} />
