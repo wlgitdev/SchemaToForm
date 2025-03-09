@@ -1,5 +1,5 @@
 import { UIFieldDefinition,
-          FieldValue } from "./index";
+          FieldValue } from "../index";
 
 export interface TransformerConfig {
   toDisplay: (value: FieldValue) => any;

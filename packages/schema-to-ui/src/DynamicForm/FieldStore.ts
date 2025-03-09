@@ -1,4 +1,4 @@
-import { UIFieldDefinition, FieldValue, FieldTransformer } from ".";
+import { UIFieldDefinition, FieldValue, FieldTransformer } from "..";
 
 export interface FieldState {
   value: FieldValue;

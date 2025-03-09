@@ -4,7 +4,7 @@ import {
   FieldEffect,
   UIFieldDefinition,
   FormData,
-} from "./index";
+} from "../index";
 
 export class DependencyHandler {
   private dependencyGraph: Map<string, Set<string>> = new Map();

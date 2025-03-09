@@ -1,4 +1,4 @@
-import { ListTheme } from "./ListSchema";
+import { ListTheme } from "../../DynamicList/types/ListSchema";
 
 export const defaultListTheme: ListTheme = {
     table: {

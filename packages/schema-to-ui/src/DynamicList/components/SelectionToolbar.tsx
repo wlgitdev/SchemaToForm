@@ -1,5 +1,5 @@
 import { type FC } from 'react';
-import { ListTheme, type ListSchema } from '../../types/ListSchema';
+import { ListTheme, type ListSchema } from '../types/ListSchema';
 
 type SelectionToolbarProps<T> = {
   selectedRows: T[];

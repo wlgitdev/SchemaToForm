@@ -1,5 +1,5 @@
 import { flexRender, Table } from '@tanstack/react-table';
-import { useListTheme } from '../../contexts/ListThemeContext';
+import { useListTheme } from '../contexts/ListThemeContext';
 
 interface ListHeaderProps<T> {
   table: Table<T>;

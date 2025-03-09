@@ -1,18 +1,6 @@
-import { CellContext, flexRender, Table } from '@tanstack/react-table';
-import { useListTheme } from '../../contexts/ListThemeContext';
-import React, { ReactNode } from 'react';
-
-const isReferenceValue = (value: unknown): value is Record<string, unknown> => {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-};
-
-// Helper function to safely convert unknown to ReactNode
-const toReactNode = (value: unknown): ReactNode => {
-  if (value === null || value === undefined) {
-    return '-';
-  }
-  return String(value);
-};
+import { flexRender, Table } from '@tanstack/react-table';
+import { useListTheme } from '../contexts/ListThemeContext';
+import { ReactNode } from 'react';
 
 interface ListBodyProps<T> {
   table: Table<T>;
@@ -24,6 +12,10 @@ export const ListBody = <T extends object>({
   showGroupCounts
 }: ListBodyProps<T>) => {
   const theme = useListTheme();
+
+  const renderCell = (content: unknown): ReactNode => {
+    return content as ReactNode;
+  };
 
   return (
     <tbody>
@@ -45,7 +37,7 @@ export const ListBody = <T extends object>({
                     style={{ cursor: 'pointer' }}
                     onClick={row.getToggleExpandedHandler()}
                   >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    {renderCell(flexRender(cell.column.columnDef.cell, cell.getContext()))}
                     {showGroupCounts && (
                       <span className={theme.table.groupRow.count}>
                         {` (${row.subRows.length})`}
@@ -56,12 +48,12 @@ export const ListBody = <T extends object>({
                     </span>
                   </div>
                 ) : isAggregated ? (
-                  flexRender(
+                  renderCell(flexRender(
                     cell.column.columnDef.aggregatedCell ?? cell.column.columnDef.cell,
                     cell.getContext()
-                  )
+                  ))
                 ) : isPlaceholder ? null : (
-                  flexRender(cell.column.columnDef.cell, cell.getContext())
+                  renderCell(flexRender(cell.column.columnDef.cell, cell.getContext()))
                 )}
               </td>
             );

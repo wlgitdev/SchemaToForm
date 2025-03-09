@@ -1,4 +1,4 @@
-import { SchemaTransformer, SchemaValidator, UIFieldDefinition, UIFieldType, UISchema } from ".";
+import { SchemaTransformer, SchemaValidator, UIFieldDefinition, UIFieldType, UISchema } from "..";
 
 type DefaultFieldValue = string | number | boolean | null | string[] | never[];
 

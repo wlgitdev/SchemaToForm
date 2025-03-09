@@ -1,4 +1,4 @@
-import { UISchema } from ".";
+import { UISchema } from "..";
 
 export type SchemaValidator = (
   schema: UISchema

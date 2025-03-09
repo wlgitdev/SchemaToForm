@@ -16,11 +16,11 @@ import {
   getExpandedRowModel,
   ExpandedState,
 } from "@tanstack/react-table";
-import { ActionItem, ColumnDefinition, DataType, ListSchema, PrimitiveType } from "../../types/ListSchema";
+import { ActionItem, ColumnDefinition, DataType, ListSchema, PrimitiveType } from "../types/ListSchema";
 import { ListHeader } from "./ListHeader";
 import { ListBody } from "./ListBody";
 import { SelectionToolbar } from "./SelectionToolbar";
-import { useListTheme } from "../../contexts/ListThemeContext";
+import { useListTheme } from "../contexts/ListThemeContext";
 
 const isReferenceValue = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
