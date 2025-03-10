@@ -161,6 +161,7 @@ Key Features and Requirements:
    - Custom formatting options
    - Conditional visibility and styling
    - Action column support with button/link/menu variants
+   - Schema adapter available to pass a mongoose model schema to and it creates table columns from the fields
 
 2. Data Display Options
    - Pagination configuration with customizable page sizes
@@ -243,6 +244,8 @@ schema-to-ui/
     validators/
       columnSchemaValidator.ts
 ```
+
+
 
 ## Requirement 1.2. Rendering Lists
 ### Core Component: DynamicList
@@ -480,4 +483,3 @@ schema-to-ui/
         SelectionToolbar.tsx    # Selected row actions toolbar
         selectionUtils.ts       # Selection helper functions
 ```
-

@@ -39,7 +39,7 @@
       "role": "pm"
     },
     "implement": {
-      "description": "Generate implementation code. the less the better. after any implementation provide the user with testing instructions.",
+      "description": "Generate implementation code to satisfy the requirement word for word. the less code the better. after any implementation provide the user with testing instructions.",
       "usage": "/implement [requirement reference]",
       "action": "executeWithRole",
       "role": "dev"
