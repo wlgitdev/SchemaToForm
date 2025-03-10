@@ -17,9 +17,9 @@ export * from "./fieldTransformers";
 
 // Schema Management
 export * from "./DependencyHandler";
-export * from "./SchemaAdapter";
+export * from "../SchemaAdapter";
 export * from "./SchemaRegistry";
 export * from "./formSchemaValidators";
 
 // Adapters
-export * from "./MongooseSchemaAdapter";
+export * from "../MongooseSchemaAdapter";

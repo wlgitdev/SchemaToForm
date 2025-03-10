@@ -90,11 +90,13 @@ export interface ColumnFormat<T = unknown> {
   };
 }
 
+export type ColumnType = "text" | "number" | "date" | "boolean" | "array" | "reference" | "action";
+
 // Column definition with proper typing
 export interface ColumnDefinition<T = unknown> {
   label: string;
   field: keyof T;
-  type: "text" | "number" | "date" | "boolean" | "array" | "reference" | "action";
+  type: ColumnType;
   width?: number | string;
   sortable: boolean;
   filterable?: boolean;
