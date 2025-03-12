@@ -15,15 +15,25 @@ import {
   getGroupedRowModel,
   getExpandedRowModel,
   ExpandedState,
+  FilterFn,
+  Row,
+  ColumnFiltersState,
 } from "@tanstack/react-table";
-import { ActionItem, ColumnDefinition, DataType, ListSchema, PrimitiveType } from "../types/ListSchema";
+import {
+  ActionItem,
+  ColumnDefinition,
+  ColumnType,
+  DataType,
+  ListSchema,
+  PrimitiveType,
+} from "../types/ListSchema";
 import { ListHeader } from "./ListHeader";
 import { ListBody } from "./ListBody";
 import { SelectionToolbar } from "./SelectionToolbar";
 import { useListTheme } from "../contexts/ListThemeContext";
 
 const isReferenceValue = (value: unknown): value is Record<string, unknown> => {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 };
 
 const formatCellValue = <T extends object>(
@@ -32,7 +42,7 @@ const formatCellValue = <T extends object>(
   col: ColumnDefinition<T>
 ): React.ReactNode => {
   if (value === null || value === undefined) {
-    return '-';
+    return "-";
   }
 
   const format = col.format;
@@ -41,8 +51,8 @@ const formatCellValue = <T extends object>(
   }
 
   // Add handling for action type
-  if (col.type === 'action' && Array.isArray(value)) {
-    const actions = value as ActionItem[];  // Type assertion here is safe because we've verified the column type
+  if (col.type === "action" && Array.isArray(value)) {
+    const actions = value as ActionItem[]; // Type assertion here is safe because we've verified the column type
     return (
       <div className="flex gap-2">
         {actions.map((action, index) => (
@@ -50,9 +60,9 @@ const formatCellValue = <T extends object>(
             key={index}
             onClick={action.onClick}
             className={`px-2 py-1 text-sm rounded ${
-              action.variant === 'primary' 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-gray-200 text-gray-700'
+              action.variant === "primary"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 text-gray-700"
             }`}
           >
             {action.label}
@@ -63,23 +73,26 @@ const formatCellValue = <T extends object>(
   }
 
   // Handle reference type separately
-  if (col.type === 'reference' && isReferenceValue(value)) {
+  if (col.type === "reference" && isReferenceValue(value)) {
     const labelField = format.reference?.labelField;
     return labelField && value[labelField]
-      ? String(value[labelField])  // Ensure string conversion
-      : (format.reference?.fallback ?? '-');
+      ? String(value[labelField]) // Ensure string conversion
+      : format.reference?.fallback ?? "-";
   }
 
   // Handle other types
   const typedValue = value as DataType;
   switch (col.type) {
-    case 'text': {
+    case "text": {
       const textValue = typedValue as string;
       if (format.text?.transform) {
         switch (format.text.transform) {
-          case 'uppercase': return textValue.toUpperCase();
-          case 'lowercase': return textValue.toLowerCase();
-          case 'capitalize': return textValue.charAt(0).toUpperCase() + textValue.slice(1);
+          case "uppercase":
+            return textValue.toUpperCase();
+          case "lowercase":
+            return textValue.toLowerCase();
+          case "capitalize":
+            return textValue.charAt(0).toUpperCase() + textValue.slice(1);
         }
       }
       if (format.text?.truncate && textValue.length > format.text.truncate) {
@@ -88,62 +101,68 @@ const formatCellValue = <T extends object>(
       return textValue;
     }
 
-    case 'number': {
+    case "number": {
       const numValue = typedValue as number;
       if (format.number) {
         return new Intl.NumberFormat(undefined, {
           minimumFractionDigits: format.number.precision,
           notation: format.number.notation,
-          style: format.number.currency ? 'currency' : 'decimal',
+          style: format.number.currency ? "currency" : "decimal",
           currency: format.number.currency,
         }).format(numValue);
       }
       return numValue.toString();
     }
 
-    case 'date': {
+    case "date": {
       const dateValue = typedValue as Date;
       if (format.date) {
         if (format.date.relative) {
           // Implement relative time formatting
           return new Intl.RelativeTimeFormat().format(
             Math.floor((dateValue.getTime() - Date.now()) / 86400000),
-            'days'
+            "days"
           );
         }
         return new Intl.DateTimeFormat(undefined, {
-          dateStyle: 'medium',
+          dateStyle: "medium",
           timeZone: format.date.timezone,
         }).format(dateValue);
       }
       return dateValue.toLocaleDateString();
     }
 
-    case 'boolean': {
+    case "boolean": {
       const boolValue = typedValue as boolean;
       if (format.boolean) {
         return boolValue
-          ? (format.boolean.trueText ?? 'Yes')
-          : (format.boolean.falseText ?? 'No');
+          ? format.boolean.trueText ?? "Yes"
+          : format.boolean.falseText ?? "No";
       }
-      return boolValue ? 'Yes' : 'No';
+      return boolValue ? "Yes" : "No";
     }
 
-    case 'array': {
+    case "array": {
       const arrayValue = typedValue as PrimitiveType[];
       if (format.array) {
         const items = format.array.maxItems
           ? arrayValue.slice(0, format.array.maxItems)
           : arrayValue;
-        const formatted = items.map(item =>
-          format.array?.itemFormatter?.(item) ?? String(item)
+        const formatted = items.map(
+          (item) => format.array?.itemFormatter?.(item) ?? String(item)
         );
-        if (format.array.maxItems && arrayValue.length > format.array.maxItems) {
-          formatted.push(format.array.more ?? `+${arrayValue.length - format.array.maxItems} more`);
+        if (
+          format.array.maxItems &&
+          arrayValue.length > format.array.maxItems
+        ) {
+          formatted.push(
+            format.array.more ??
+              `+${arrayValue.length - format.array.maxItems} more`
+          );
         }
-        return formatted.join(format.array.separator ?? ', ');
+        return formatted.join(format.array.separator ?? ", ");
       }
-      return arrayValue.join(', ');
+      return arrayValue.join(", ");
     }
 
     default:
@@ -163,21 +182,19 @@ type QueryState<T> = {
   isLoading: boolean;
   error: unknown;
 };
-const getTypeSortingFn = <T extends object>(
-  col: ColumnDefinition<T>
-) => {
+const getTypeSortingFn = <T extends object>(col: ColumnDefinition<T>) => {
   switch (col.type) {
-    case 'reference':
+    case "reference":
       return (rowA: any, rowB: any, columnId: string) => {
         const a = rowA.getValue(columnId) as Record<string, unknown>;
         const b = rowB.getValue(columnId) as Record<string, unknown>;
         const labelField = col.format?.reference?.labelField;
-        const aValue = (a?.[labelField as string] as string) ?? '';
-        const bValue = (b?.[labelField as string] as string) ?? '';
+        const aValue = (a?.[labelField as string] as string) ?? "";
+        const bValue = (b?.[labelField as string] as string) ?? "";
         return aValue.localeCompare(bValue);
       };
 
-    case 'date':
+    case "date":
       return (rowA: any, rowB: any, columnId: string) => {
         const aValue = rowA.getValue(columnId);
         const bValue = rowB.getValue(columnId);
@@ -193,21 +210,21 @@ const getTypeSortingFn = <T extends object>(
         return aTime - bTime;
       };
 
-    case 'number':
+    case "number":
       return (rowA: any, rowB: any, columnId: string) => {
         const a = rowA.getValue(columnId) as number;
         const b = rowB.getValue(columnId) as number;
         return (a ?? 0) - (b ?? 0);
       };
 
-    case 'boolean':
+    case "boolean":
       return (rowA: any, rowB: any, columnId: string) => {
         const a = rowA.getValue(columnId) as boolean;
         const b = rowB.getValue(columnId) as boolean;
-        return (a === b) ? 0 : a ? -1 : 1;
+        return a === b ? 0 : a ? -1 : 1;
       };
 
-    case 'array':
+    case "array":
       return (rowA: any, rowB: any, columnId: string) => {
         const a = rowA.getValue(columnId) as unknown[];
         const b = rowB.getValue(columnId) as unknown[];
@@ -215,36 +232,151 @@ const getTypeSortingFn = <T extends object>(
 
         // If there's a custom item formatter, use it for sorting
         if (format?.itemFormatter) {
-          const aStr = (a ?? []).map(item => format.itemFormatter!(item)).join(',');
-          const bStr = (b ?? []).map(item => format.itemFormatter!(item)).join(',');
+          const aStr = (a ?? [])
+            .map((item) => format.itemFormatter!(item))
+            .join(",");
+          const bStr = (b ?? [])
+            .map((item) => format.itemFormatter!(item))
+            .join(",");
           return aStr.localeCompare(bStr);
         }
 
         // Default array sorting
-        return (a ?? []).join(',').localeCompare((b ?? []).join(','));
+        return (a ?? []).join(",").localeCompare((b ?? []).join(","));
       };
 
-    case 'text':
+    case "text":
     default:
       return (rowA: any, rowB: any, columnId: string) => {
-        const a = String(rowA.getValue(columnId) ?? '');
-        const b = String(rowB.getValue(columnId) ?? '');
+        const a = String(rowA.getValue(columnId) ?? "");
+        const b = String(rowB.getValue(columnId) ?? "");
 
         // Apply text transformations if specified
         const transform = col.format?.text?.transform;
         if (transform) {
           switch (transform) {
-            case 'uppercase':
+            case "uppercase":
               return a.toUpperCase().localeCompare(b.toUpperCase());
-            case 'lowercase':
+            case "lowercase":
               return a.toLowerCase().localeCompare(b.toLowerCase());
-            case 'capitalize':
-              return a.charAt(0).toUpperCase().localeCompare(b.charAt(0).toUpperCase());
+            case "capitalize":
+              return a
+                .charAt(0)
+                .toUpperCase()
+                .localeCompare(b.charAt(0).toUpperCase());
           }
         }
 
         return a.localeCompare(b);
       };
+  }
+};
+
+// Strictly typed filter function generator
+const getColumnFilterFn = <T extends object>(
+  col: ColumnDefinition<T>
+): FilterFn<T> => {
+  switch (col.type) {
+    case "text": {
+      const filterFn: FilterFn<T> = (
+        row: Row<T>,
+        columnId: string,
+        filterValue: string
+      ) => {
+        const value = row.getValue(columnId);
+        return String(value)
+          .toLowerCase()
+          .includes(String(filterValue).toLowerCase());
+      };
+      return filterFn;
+    }
+
+    case "number": {
+      const filterFn: FilterFn<T> = (
+        row: Row<T>,
+        columnId: string,
+        filterValue: [number?, number?]
+      ) => {
+        const value = row.getValue(columnId) as number;
+        const [min, max] = filterValue || [];
+
+        // If both bounds are empty/invalid, show all records
+        if (min === undefined && max === undefined) return true;
+        if (min === undefined) return value <= max!;
+        if (max === undefined) return value >= min;
+        return value >= min && value <= max;
+      };
+      return filterFn;
+    }
+
+    case "date": {
+      const filterFn: FilterFn<T> = (
+        row: Row<T>,
+        columnId: string,
+        filterValue: [string?, string?]
+      ) => {
+        try {
+          const value = row.getValue(columnId);
+          const [start, end] = filterValue || [];
+
+          // Early return if no filter
+          if (!start && !end) return true;
+
+          // Safely convert to Date, handling both Date objects and strings
+          const dateValue =
+            value instanceof Date ? value : new Date(value as string);
+
+          // Validate the date value
+          if (isNaN(dateValue.getTime())) return false;
+
+          // Handle start date
+          if (start) {
+            const startDate = new Date(start);
+            if (isNaN(startDate.getTime())) return false;
+
+            // Set to start of day in UTC
+            startDate.setUTCHours(0, 0, 0, 0);
+
+            if (dateValue < startDate) return false;
+          }
+
+          // Handle end date
+          if (end) {
+            const endDate = new Date(end);
+            if (isNaN(endDate.getTime())) return false;
+
+            // Set to end of day in UTC
+            endDate.setUTCHours(23, 59, 59, 999);
+
+            if (dateValue > endDate) return false;
+          }
+
+          return true;
+        } catch (error) {
+          console.error("Date filtering error:", error);
+          return false;
+        }
+      };
+      return filterFn;
+    }
+
+    case "action":
+      // Action columns typically don't need filtering
+      return () => true;
+
+    default: {
+      const filterFn: FilterFn<T> = (
+        row: Row<T>,
+        columnId: string,
+        filterValue: string
+      ) => {
+        const value = row.getValue(columnId);
+        return String(value)
+          .toLowerCase()
+          .includes(String(filterValue).toLowerCase());
+      };
+      return filterFn;
+    }
   }
 };
 
@@ -260,13 +392,14 @@ export const DynamicList = <T extends object>({
   const [grouping, setGrouping] = useState<GroupingState>(
     schema.options?.groupBy ? [schema.options.groupBy.field as string] : []
   );
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   // Data fetching with react-query
   const {
     data = [],
     isLoading,
-    error
+    error,
   } = useQuery<T[], Error>({
     queryKey,
     queryFn,
@@ -279,7 +412,7 @@ export const DynamicList = <T extends object>({
     const groupMap: Record<string, boolean> = {};
     const groupField = schema.options.groupBy.field as string;
 
-    data.forEach(row => {
+    data.forEach((row) => {
       const value = row[schema.options!.groupBy!.field as keyof T];
       if (isReferenceValue(value)) {
         // For reference types, use the name field as the group value
@@ -302,7 +435,7 @@ export const DynamicList = <T extends object>({
     if (schema.options?.selection?.enabled) {
       cols.push(
         columnHelper.display({
-          id: 'select',
+          id: "select",
           header: ({ table }) => (
             <input
               type="checkbox"
@@ -329,45 +462,60 @@ export const DynamicList = <T extends object>({
     Object.entries(schema.columns).forEach(([key, col]) => {
       const typedCol = col as ColumnDefinition<T>;
       cols.push(
-        columnHelper.accessor((row: T) => {
-          const field = typedCol.field as keyof T;
-          const value = row[field];
+        columnHelper.accessor(
+          (row: T) => {
+            const field = typedCol.field as keyof T;
+            const value = row[field];
 
-          // For reference types, return the entire reference object for proper grouping
-          if (typedCol.type === 'reference' && isReferenceValue(value)) {
-            return value;
-          }
-          return value;
-        }, {
-          id: key,
-          header: typedCol.label,
-          cell: ({ getValue, row }) => {
-            const value = getValue() as DataType;
-            return formatCellValue(value, row.original, typedCol);
-          },
-          enableSorting: typedCol.sortable,
-          sortingFn: typedCol.sortable ? getTypeSortingFn(typedCol) : undefined,
-          // Only enable grouping for the column specified in schema.options.groupBy
-          enableGrouping: schema.options?.groupBy?.field === typedCol.field,
-          // Disable aggregation for non-grouped columns by setting to undefined
-          aggregationFn: undefined,
-          getGroupingValue: schema.options?.groupBy?.field === typedCol.field
-            ? (row: T) => {
-              const field = typedCol.field as keyof T;
-              const value = row[field];
-              if (typedCol.type === 'reference' && isReferenceValue(value)) {
-                return value.name;
-              }
+            // For reference types, return the entire reference object for proper grouping
+            if (typedCol.type === "reference" && isReferenceValue(value)) {
               return value;
             }
-            : undefined,
-        })
+            return value;
+          },
+          {
+            id: key,
+            header: typedCol.label,
+            cell: ({ getValue, row }) => {
+              const value = getValue() as DataType;
+              return formatCellValue(value, row.original, typedCol);
+            },
+            enableSorting: typedCol.sortable,
+            sortingFn: typedCol.sortable
+              ? getTypeSortingFn(typedCol)
+              : undefined,
+            // Only enable grouping for the column specified in schema.options.groupBy
+            enableGrouping: schema.options?.groupBy?.field === typedCol.field,
+            // Disable aggregation for non-grouped columns by setting to undefined
+            aggregationFn: undefined,
+            getGroupingValue:
+              schema.options?.groupBy?.field === typedCol.field
+                ? (row: T) => {
+                    const field = typedCol.field as keyof T;
+                    const value = row[field];
+                    if (
+                      typedCol.type === "reference" &&
+                      isReferenceValue(value)
+                    ) {
+                      return value.name;
+                    }
+                    return value;
+                  }
+                : undefined,
+            enableColumnFilter: typedCol.filterable ?? false,
+            filterFn: getColumnFilterFn(typedCol),
+          }
+        )
       );
     });
 
     return cols;
-  }, [schema.columns, schema.options?.groupBy, columnHelper, theme?.selection?.checkbox]);
-
+  }, [
+    schema.columns,
+    schema.options?.groupBy,
+    columnHelper,
+    theme?.selection?.checkbox,
+  ]);
 
   useEffect(() => {
     if (schema.options?.groupBy?.expanded) {
@@ -384,14 +532,16 @@ export const DynamicList = <T extends object>({
       sorting,
       grouping,
       expanded,
+      columnFilters,
     },
     onSortingChange: setSorting,
     onGroupingChange: setGrouping,
     onExpandedChange: setExpanded,
     getExpandedRowModel: getExpandedRowModel(),
     enableRowSelection: true,
-    enableMultiRowSelection: schema.options?.selection?.type === 'multi',
+    enableMultiRowSelection: schema.options?.selection?.type === "multi",
     onRowSelectionChange: setRowSelection,
+    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -399,18 +549,20 @@ export const DynamicList = <T extends object>({
     getGroupedRowModel: getGroupedRowModel(),
     enableGrouping: true,
     enableExpanding: true,
-    groupedColumnMode: 'reorder',
+    groupedColumnMode: "reorder",
     initialState: {
       pagination: {
         pageSize: schema.options?.pagination?.pageSize ?? 10,
       },
-      grouping: schema.options?.groupBy ? [schema.options.groupBy.field as string] : [],
+      grouping: schema.options?.groupBy
+        ? [schema.options.groupBy.field as string]
+        : [],
       expanded: schema.options?.groupBy?.expanded ? true : {},
     },
   });
 
-  const selectedRows = useMemo(() =>
-    table.getSelectedRowModel().rows.map(row => row.original as T),
+  const selectedRows = useMemo(
+    () => table.getSelectedRowModel().rows.map((row) => row.original as T),
     [table, rowSelection]
   );
   // Call the onSelect callback when selection changes
@@ -433,8 +585,15 @@ export const DynamicList = <T extends object>({
         theme={theme?.selection?.toolbar}
       />
       <table className={theme.table.container}>
-        <ListHeader table={table} showGroupCounts={schema.options?.groupBy?.showCounts} />
-        <ListBody table={table} showGroupCounts={schema.options?.groupBy?.showCounts} />
+        <ListHeader
+          table={table}
+          showGroupCounts={schema.options?.groupBy?.showCounts}
+          schema={schema}
+        />
+        <ListBody
+          table={table}
+          showGroupCounts={schema.options?.groupBy?.showCounts}
+        />
       </table>
       {schema.options?.pagination?.enabled && (
         <div className={theme.pagination.container}>

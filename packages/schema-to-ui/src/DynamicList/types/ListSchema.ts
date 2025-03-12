@@ -8,6 +8,7 @@ export interface ListTheme {
       container: string;
       cell: string;
       sortIcon: string;
+      filterInput: string; 
     };
     row: string;
     cell: string;

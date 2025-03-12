@@ -40,6 +40,7 @@ const testSchema: ListSchema<TestItem> = {
       field: "age",
       type: "number",
       sortable: true,
+      filterable: true, 
       format: {
         number: {
           precision: 0,
@@ -51,6 +52,7 @@ const testSchema: ListSchema<TestItem> = {
       field: "isActive",
       type: "boolean",
       sortable: true,
+      filterable: true, // Enable boolean filtering
       format: {
         boolean: {
           trueText: "✅",
@@ -64,6 +66,7 @@ const testSchema: ListSchema<TestItem> = {
       field: "createdAt",
       type: "date",
       sortable: true,
+      filterable: true, // Enable date range filtering
       format: {
         date: {
           relative: true,
@@ -75,6 +78,7 @@ const testSchema: ListSchema<TestItem> = {
       field: "tags",
       type: "array",
       sortable: true,
+      filterable: true, // Enable array filtering
       format: {
         array: {
           maxItems: 2,
@@ -88,6 +92,7 @@ const testSchema: ListSchema<TestItem> = {
       field: "department",
       type: "reference",
       sortable: true,
+      filterable: true, // Enable reference filtering
       format: {
         reference: {
           labelField: "name",
