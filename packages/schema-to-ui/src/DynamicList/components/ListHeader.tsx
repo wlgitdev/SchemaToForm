@@ -15,11 +15,6 @@ type SelectOption = {
   label: string;
 };
 
-type SelectOption = {
-  value: string;
-  label: string;
-};
-
 const FilterControl = <T extends object>({
   column,
   columnDef,
@@ -37,8 +32,6 @@ const FilterControl = <T extends object>({
     case "array": {
       if (!filterOptions) return null;
 
-      const filterConfig = columnDef.format?.array?.filter;
-      const isMulti = filterConfig?.isMulti ?? true;
       const filterConfig = columnDef.format?.array?.filter;
       const isMulti = filterConfig?.isMulti ?? true;
       const currentValue = (column.getFilterValue() as string[]) || [];

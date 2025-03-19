@@ -176,6 +176,7 @@ type DynamicListProps<T extends object> = {
   queryKey: readonly unknown[];
   queryFn: () => Promise<T[]>;
   className?: string;
+  initialRowSelection?: Record<string, boolean>;
 };
 
 type QueryState<T> = {
@@ -412,6 +413,7 @@ export const DynamicList = <T extends object>({
   queryKey,
   queryFn,
   className,
+  initialRowSelection,
 }: DynamicListProps<T>) => {
   const theme = useListTheme();
   const columnHelper = createColumnHelper<T>();
@@ -420,7 +422,9 @@ export const DynamicList = <T extends object>({
     schema.options?.groupBy ? [schema.options.groupBy.field as string] : []
   );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>(
+    initialRowSelection || {}
+  );
 
   // Data fetching with react-query
   const {
