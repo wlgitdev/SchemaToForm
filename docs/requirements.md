@@ -63,3 +63,5 @@
     3.1. Customizable theme system
     3.2. Default styling with Tailwind CSS
     3.3. Component-level style overrides
+
+4. Support for filtering records via react-table record filtering capabilities.

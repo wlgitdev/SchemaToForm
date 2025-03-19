@@ -36,6 +36,12 @@ export interface ListTheme {
   error: string;
 }
 
+export type ColumnFilterOptions = {
+  uniqueValues: string[];
+  selectedValues: string[];
+  onFilterChange: (values: string[]) => void;
+};
+
 export type ActionItem = {
   label: string;
   variant?: "primary" | "secondary" | "text" | "link";

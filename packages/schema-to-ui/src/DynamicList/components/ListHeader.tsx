@@ -1,25 +1,75 @@
 import { flexRender, Table } from "@tanstack/react-table";
 import { useListTheme } from "../contexts/ListThemeContext";
-import { ColumnDefinition, ListSchema } from "../types";
+import { ColumnDefinition, ColumnFilterOptions, ListSchema } from "../types";
 
 interface ListHeaderProps<T> {
   table: Table<T>;
   showGroupCounts?: boolean;
   schema: ListSchema<T>;
+  columnFilterOptions: Map<string, ColumnFilterOptions>;
 }
 
 const FilterControl = <T extends object>({
   column,
   columnDef,
+  filterOptions,
 }: {
-  column: any; // Using any here as the column type is complex
+  column: any;
   columnDef: ColumnDefinition<T>;
+  filterOptions?: ColumnFilterOptions;
 }) => {
   const theme = useListTheme();
 
   if (!columnDef.filterable) return null;
 
   switch (columnDef.type) {
+    case "array": {
+      if (!filterOptions) return null;
+
+      // Get the current filter value from the column
+      const currentValue = (column.getFilterValue() as string[]) || [];
+
+      return (
+        <div className="relative">
+          <select
+            multiple
+            value={currentValue}
+            onChange={(e) => {
+              const values = Array.from(
+                e.target.selectedOptions,
+                (option) => option.value
+              );
+              column.setFilterValue(values.length ? values : undefined);
+            }}
+            size={Math.min(10, filterOptions.uniqueValues.length)}
+            className={`${theme.table.header.filterInput} min-h-[6rem] max-h-[12rem] overflow-y-auto`}
+          >
+            {filterOptions.uniqueValues.map((item) => (
+              <option 
+                key={item} 
+                value={item}
+                // Add selected attribute for explicit control
+                selected={currentValue.includes(item)}
+                className="p-1 hover:bg-gray-100"
+              >
+                {item}
+              </option>
+            ))}
+          </select>
+          {currentValue.length > 0 && (
+            <div className="absolute right-2 top-2">
+              <button
+                onClick={() => column.setFilterValue(undefined)}
+                className="text-xs text-gray-500 hover:text-gray-700"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     case "text":
       return (
         <input
@@ -123,6 +173,7 @@ export const ListHeader = <T extends object>({
   table,
   showGroupCounts,
   schema,
+  columnFilterOptions,
 }: ListHeaderProps<T>) => {
   const theme = useListTheme();
 
@@ -154,6 +205,7 @@ export const ListHeader = <T extends object>({
                       <FilterControl
                         column={header.column}
                         columnDef={columnDef}
+                        filterOptions={columnFilterOptions.get(header.id)}
                       />
                     )}
                   </div>

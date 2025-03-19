@@ -22,6 +22,7 @@ import {
 import {
   ActionItem,
   ColumnDefinition,
+  ColumnFilterOptions,
   ColumnType,
   DataType,
   ListSchema,
@@ -364,6 +365,32 @@ const getColumnFilterFn = <T extends object>(
       // Action columns typically don't need filtering
       return () => true;
 
+    case "array": {
+      const filterFn: FilterFn<T> = (
+        row: Row<T>,
+        columnId: string,
+        filterValue: string[]
+      ) => {
+        if (!filterValue?.length) return true;
+
+        const value = row.getValue(columnId) as unknown[];
+        if (!Array.isArray(value)) return false;
+
+        // Format array items using the column's formatter if available
+        const format = col.format?.array;
+        const formatItem = (item: unknown) =>
+          format?.itemFormatter ? format.itemFormatter(item) : String(item);
+
+        const rowValues = value.map(formatItem);
+
+        // Check if any of the filter values match any of the row values
+        return filterValue.some((filter) =>
+          rowValues.some((val) => val === filter)
+        );
+      };
+      return filterFn;
+    }
+
     default: {
       const filterFn: FilterFn<T> = (
         row: Row<T>,
@@ -565,6 +592,45 @@ export const DynamicList = <T extends object>({
     () => table.getSelectedRowModel().rows.map((row) => row.original as T),
     [table, rowSelection]
   );
+
+  const columnFilterOptions = useMemo(() => {
+    const options = new Map<string, ColumnFilterOptions>();
+
+    Object.entries(schema.columns).forEach(([key, col]) => {
+      const typedCol = col as ColumnDefinition<T>;
+      if (typedCol.type === "array" && typedCol.filterable) {
+        const column = table.getColumn(key);
+        if (!column) return;
+
+        // Get unique values across all rows for this column
+        const uniqueItems = new Set<string>();
+        data.forEach((row) => {
+          const value = row[typedCol.field as keyof T];
+          if (Array.isArray(value)) {
+            value.forEach((item) => {
+              // Safely convert items to strings using the formatter or a safe conversion
+              const formatted = typedCol.format?.array?.itemFormatter
+                ? String(typedCol.format.array.itemFormatter(item))
+                : typeof item === "object"
+                ? JSON.stringify(item)
+                : String(item);
+              uniqueItems.add(formatted);
+            });
+          }
+        });
+
+        options.set(key, {
+          uniqueValues: Array.from(uniqueItems).sort(),
+          selectedValues: (column.getFilterValue() as string[]) || [],
+          onFilterChange: (values: string[]) => {
+            column.setFilterValue(values.length ? values : undefined);
+          },
+        });
+      }
+    });
+
+    return options;
+  }, [data, schema.columns, table]);
   // Call the onSelect callback when selection changes
   useEffect(() => {
     schema.options?.selection?.onSelect?.(selectedRows);
@@ -589,6 +655,7 @@ export const DynamicList = <T extends object>({
           table={table}
           showGroupCounts={schema.options?.groupBy?.showCounts}
           schema={schema}
+          columnFilterOptions={columnFilterOptions}
         />
         <ListBody
           table={table}
