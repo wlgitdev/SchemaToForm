@@ -1,6 +1,7 @@
 import { flexRender, Table } from "@tanstack/react-table";
 import { useListTheme } from "../contexts/ListThemeContext";
 import { ColumnDefinition, ColumnFilterOptions, ListSchema } from "../types";
+import Select, { MultiValue, SingleValue } from 'react-select';
 
 interface ListHeaderProps<T> {
   table: Table<T>;
@@ -8,6 +9,11 @@ interface ListHeaderProps<T> {
   schema: ListSchema<T>;
   columnFilterOptions: Map<string, ColumnFilterOptions>;
 }
+
+type SelectOption = {
+  value: string;
+  label: string;
+};
 
 const FilterControl = <T extends object>({
   column,
@@ -26,47 +32,42 @@ const FilterControl = <T extends object>({
     case "array": {
       if (!filterOptions) return null;
 
-      // Get the current filter value from the column
+      const filterConfig = columnDef.format?.array?.filter;
+      const isMulti = filterConfig?.isMulti ?? true;
       const currentValue = (column.getFilterValue() as string[]) || [];
 
+      const options = filterOptions.uniqueValues.map(value => ({
+        value,
+        label: value
+      }));
+
+      const selectedOptions = options.filter(opt => 
+        currentValue.includes(opt.value)
+      );
+
       return (
-        <div className="relative">
-          <select
-            multiple
-            value={currentValue}
-            onChange={(e) => {
-              const values = Array.from(
-                e.target.selectedOptions,
-                (option) => option.value
-              );
-              column.setFilterValue(values.length ? values : undefined);
-            }}
-            size={Math.min(10, filterOptions.uniqueValues.length)}
-            className={`${theme.table.header.filterInput} min-h-[6rem] max-h-[12rem] overflow-y-auto`}
-          >
-            {filterOptions.uniqueValues.map((item) => (
-              <option 
-                key={item} 
-                value={item}
-                // Add selected attribute for explicit control
-                selected={currentValue.includes(item)}
-                className="p-1 hover:bg-gray-100"
-              >
-                {item}
-              </option>
-            ))}
-          </select>
-          {currentValue.length > 0 && (
-            <div className="absolute right-2 top-2">
-              <button
-                onClick={() => column.setFilterValue(undefined)}
-                className="text-xs text-gray-500 hover:text-gray-700"
-              >
-                Clear
-              </button>
-            </div>
-          )}
-        </div>
+        <Select<SelectOption, boolean>
+          isMulti={isMulti}
+          value={selectedOptions}
+          options={options}
+          onChange={(selected) => {
+            const values = selected
+              ? isMulti
+                ? (selected as MultiValue<SelectOption>).map(opt => opt.value)
+                : [(selected as SingleValue<SelectOption>)?.value].filter(Boolean)
+              : undefined;
+            column.setFilterValue(values);
+          }}
+          placeholder={filterConfig?.placeholder ?? `Filter ${columnDef.label}...`}
+          noOptionsMessage={() => 
+            filterConfig?.noOptionsMessage ?? 'No options available'
+          }
+          isClearable={filterConfig?.isClearable ?? true}
+          isSearchable={filterConfig?.isSearchable ?? true}
+          maxMenuHeight={filterConfig?.maxMenuHeight ?? 200}
+          className="min-w-[200px]"
+          classNamePrefix="react-select"
+        />
       );
     }
 

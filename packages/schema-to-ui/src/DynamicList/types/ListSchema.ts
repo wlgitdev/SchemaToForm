@@ -83,6 +83,14 @@ export interface ColumnFormat<T = unknown> {
     maxItems?: number;
     more?: string;
     itemFormatter?: (item: unknown) => ReactNode;
+    filter?: {
+      isMulti?: boolean;
+      placeholder?: string;
+      noOptionsMessage?: string;
+      isClearable?: boolean;
+      isSearchable?: boolean;
+      maxMenuHeight?: number;
+    };
   };
   reference?: {
     labelField: string;
