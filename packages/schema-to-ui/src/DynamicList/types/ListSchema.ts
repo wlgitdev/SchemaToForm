@@ -9,6 +9,15 @@ export interface ListTheme {
       cell: string;
       sortIcon: string;
       filterInput: string; 
+      select?: {
+        container?: string;
+        control?: string;
+        menu?: string;
+        option?: string;
+        multiValue?: string;
+        placeholder?: string;
+        input?: string;
+      };
     };
     row: string;
     cell: string;
@@ -83,6 +92,14 @@ export interface ColumnFormat<T = unknown> {
     maxItems?: number;
     more?: string;
     itemFormatter?: (item: unknown) => ReactNode;
+    filter?: {
+      isMulti?: boolean;
+      placeholder?: string;
+      noOptionsMessage?: string;
+      isClearable?: boolean;
+      isSearchable?: boolean;
+      maxMenuHeight?: number;
+    };
   };
   reference?: {
     labelField: string;
