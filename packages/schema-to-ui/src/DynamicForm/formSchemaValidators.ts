@@ -1,17 +1,22 @@
-import { SchemaTransformer, SchemaValidator, UIFieldDefinition, UIFieldType, UISchema } from "..";
+import { Schema, SchemaTransformer, SchemaType, SchemaValidator, UIFieldDefinition, UIFieldType, UISchema } from "..";
 
 type DefaultFieldValue = string | number | boolean | null | string[] | never[];
 
-export const basicSchemaValidator: SchemaValidator = (schema: UISchema) => {
+export const basicSchemaValidator: SchemaValidator = (schema: Schema, type: SchemaType) => {
+  if (type !== "form") {
+    return { valid: true, errors: [] };
+  }
+
+  const formSchema = schema as UISchema;
   const errors: string[] = [];
 
   // Check if schema has fields
-  if (!schema.fields || Object.keys(schema.fields).length === 0) {
+  if (!formSchema.fields || Object.keys(formSchema.fields).length === 0) {
     errors.push("Schema must have at least one field");
   }
 
   // Validate each field
-  Object.entries(schema.fields).forEach(([fieldName, field]) => {
+  Object.entries(formSchema.fields).forEach(([fieldName, field]) => {
     // Check required field properties
     if (!field.type) {
       errors.push(`Field ${fieldName} must have a type`);
@@ -42,9 +47,9 @@ export const basicSchemaValidator: SchemaValidator = (schema: UISchema) => {
   });
 
   // Validate layout if present
-  if (schema.layout) {
-    if (schema.layout.groups) {
-      schema.layout.groups.forEach((group, index) => {
+  if (formSchema.layout) {
+    if (formSchema.layout.groups) {
+      formSchema.layout.groups.forEach((group, index) => {
         if (!group.name) {
           errors.push(`Group ${index} must have a name`);
         }
@@ -55,7 +60,7 @@ export const basicSchemaValidator: SchemaValidator = (schema: UISchema) => {
         }
         // Check if all group fields exist in schema
         group.fields.forEach((fieldName) => {
-          if (!schema.fields[fieldName]) {
+          if (!formSchema.fields[fieldName]) {
             errors.push(
               `Group ${
                 group.name || index
@@ -75,39 +80,45 @@ export const basicSchemaValidator: SchemaValidator = (schema: UISchema) => {
 
 // Transformers
 export const defaultValueTransformer: SchemaTransformer = (
-  schema: UISchema
-): UISchema => {
+  schema: Schema,
+  type: SchemaType
+): Schema => {
+  if (type !== "form") return schema;
+  
+  const formSchema = schema as UISchema;
   const transformedFields: Record<string, UIFieldDefinition> = {};
 
-  Object.entries(schema.fields).forEach(([fieldName, field]) => {
+  Object.entries(formSchema.fields).forEach(([fieldName, field]) => {
     transformedFields[fieldName] = {
       ...field,
-      // Set default values based on field type if not already set
       defaultValue: field.defaultValue ?? getDefaultValueForType(field.type),
     };
   });
 
   return {
-    ...schema,
+    ...formSchema,
     fields: transformedFields,
   };
 };
 
 export const labelTransformer: SchemaTransformer = (
-  schema: UISchema
-): UISchema => {
+  schema: Schema,
+  type: SchemaType
+): Schema => {
+  if (type !== "form") return schema;
+
+  const formSchema = schema as UISchema;
   const transformedFields: Record<string, UIFieldDefinition> = {};
 
-  Object.entries(schema.fields).forEach(([fieldName, field]) => {
+  Object.entries(formSchema.fields).forEach(([fieldName, field]) => {
     transformedFields[fieldName] = {
       ...field,
-      // Generate label from field name if not set
       label: field.label || formatFieldLabel(fieldName),
     };
   });
 
   return {
-    ...schema,
+    ...formSchema,
     fields: transformedFields,
   };
 };

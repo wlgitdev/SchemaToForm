@@ -18,7 +18,7 @@ export * from "./fieldTransformers";
 // Schema Management
 export * from "./DependencyHandler";
 export * from "../SchemaAdapter";
-export * from "./SchemaRegistry";
+export * from "../SchemaRegistry";
 export * from "./formSchemaValidators";
 
 // Adapters
