@@ -116,10 +116,17 @@ const formatCellValue = <T extends object>(
     }
 
     case "date": {
-      const dateValue = typedValue as Date;
-      if (format.date) {
+      const dateValue = typedValue instanceof Date 
+        ? typedValue 
+        : new Date(typedValue as string);
+          
+      // Validate the date before formatting
+      if (isNaN(dateValue.getTime())) {
+        return "-";
+      }
+    
+      if (format?.date) {
         if (format.date.relative) {
-          // Implement relative time formatting
           return new Intl.RelativeTimeFormat().format(
             Math.floor((dateValue.getTime() - Date.now()) / 86400000),
             "days"
