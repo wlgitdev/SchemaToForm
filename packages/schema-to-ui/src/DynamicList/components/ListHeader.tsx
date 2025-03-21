@@ -1,7 +1,8 @@
 import { flexRender, Table } from "@tanstack/react-table";
 import { useListTheme } from "../contexts/ListThemeContext";
 import { ColumnDefinition, ColumnFilterOptions, ListSchema } from "../types";
-import Select, { MultiValue, SingleValue, StylesConfig } from 'react-select';
+import Select, { MultiValue, SingleValue, StylesConfig } from "react-select";
+import { ReactNode } from "react";
 
 interface ListHeaderProps<T> {
   table: Table<T>;
@@ -36,12 +37,12 @@ const FilterControl = <T extends object>({
       const isMulti = filterConfig?.isMulti ?? true;
       const currentValue = (column.getFilterValue() as string[]) || [];
 
-      const options = filterOptions.uniqueValues.map(value => ({
+      const options = filterOptions.uniqueValues.map((value) => ({
         value,
-        label: value
+        label: value,
       }));
 
-      const selectedOptions = options.filter(opt => 
+      const selectedOptions = options.filter((opt) =>
         currentValue.includes(opt.value)
       );
 
@@ -49,44 +50,44 @@ const FilterControl = <T extends object>({
         container: (provided) => ({
           ...provided,
           ...(theme.table.header.select?.container && {
-            className: theme.table.header.select.container
-          })
+            className: theme.table.header.select.container,
+          }),
         }),
         control: (provided) => ({
           ...provided,
           ...(theme.table.header.select?.control && {
-            className: theme.table.header.select.control
-          })
+            className: theme.table.header.select.control,
+          }),
         }),
         menu: (provided) => ({
           ...provided,
           ...(theme.table.header.select?.menu && {
-            className: theme.table.header.select.menu
-          })
+            className: theme.table.header.select.menu,
+          }),
         }),
         option: (provided) => ({
           ...provided,
           ...(theme.table.header.select?.option && {
-            className: theme.table.header.select.option
-          })
+            className: theme.table.header.select.option,
+          }),
         }),
         multiValue: (provided) => ({
           ...provided,
           ...(theme.table.header.select?.multiValue && {
-            className: theme.table.header.select.multiValue
-          })
+            className: theme.table.header.select.multiValue,
+          }),
         }),
         placeholder: (provided) => ({
           ...provided,
           ...(theme.table.header.select?.placeholder && {
-            className: theme.table.header.select.placeholder
-          })
+            className: theme.table.header.select.placeholder,
+          }),
         }),
         input: (provided) => ({
           ...provided,
           ...(theme.table.header.select?.input && {
-            className: theme.table.header.select.input
-          })
+            className: theme.table.header.select.input,
+          }),
         }),
       };
 
@@ -98,14 +99,18 @@ const FilterControl = <T extends object>({
           onChange={(selected) => {
             const values = selected
               ? isMulti
-                ? (selected as MultiValue<SelectOption>).map(opt => opt.value)
-                : [(selected as SingleValue<SelectOption>)?.value].filter(Boolean)
+                ? (selected as MultiValue<SelectOption>).map((opt) => opt.value)
+                : [(selected as SingleValue<SelectOption>)?.value].filter(
+                    Boolean
+                  )
               : undefined;
             column.setFilterValue(values);
           }}
-          placeholder={filterConfig?.placeholder ?? `Filter ${columnDef.label}...`}
-          noOptionsMessage={() => 
-            filterConfig?.noOptionsMessage ?? 'No options available'
+          placeholder={
+            filterConfig?.placeholder ?? `Filter ${columnDef.label}...`
+          }
+          noOptionsMessage={() =>
+            filterConfig?.noOptionsMessage ?? "No options available"
           }
           isClearable={filterConfig?.isClearable ?? true}
           isSearchable={filterConfig?.isSearchable ?? true}
@@ -237,10 +242,14 @@ export const ListHeader = <T extends object>({
                       className="flex items-center gap-2 cursor-pointer"
                       onClick={header.column.getToggleSortingHandler()}
                     >
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
+                      <>
+                        {
+                          flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          ) as ReactNode
+                        }
+                      </>
                       {header.column.getIsSorted() && (
                         <span className={theme.table.header.sortIcon}>
                           {header.column.getIsSorted() === "asc" ? " ↑" : " ↓"}

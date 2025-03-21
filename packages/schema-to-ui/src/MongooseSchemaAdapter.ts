@@ -438,20 +438,20 @@ export class MongooseSchemaAdapter extends BaseSchemaAdapter<Schema> {
 
         // Add specific formatting based on column type
         if (columnType === "boolean") {
-          virtualColumns[virtualPath].format = {
+          virtualColumns[virtualPath]!.format = {
             boolean: {
               trueText: "Yes",
               falseText: "No",
             },
           };
         } else if (columnType === "date") {
-          virtualColumns[virtualPath].format = {
+          virtualColumns[virtualPath]!.format = {
             date: {
               format: "MMM dd, yyyy",
             },
           };
         } else if (columnType === "number") {
-          virtualColumns[virtualPath].format = {
+          virtualColumns[virtualPath]!.format = {
             number: {
               precision: 2,
             },
