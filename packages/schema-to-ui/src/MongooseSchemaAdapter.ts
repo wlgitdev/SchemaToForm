@@ -477,7 +477,9 @@ export class MongooseSchemaAdapter extends BaseSchemaAdapter<Schema> {
     // Check for date operations
     if (
       getterFunction.includes("new Date") ||
-      getterFunction.includes("Date(")
+      getterFunction.includes("Date(") ||
+      getterFunction.includes("Date") ||
+      getterFunction.includes("date")
     ) {
       return "date";
     }
@@ -515,7 +517,9 @@ export class MongooseSchemaAdapter extends BaseSchemaAdapter<Schema> {
     // Check for date operations
     if (
       getterFunction.includes("new Date") ||
-      getterFunction.includes("Date(")
+      getterFunction.includes("Date(") ||
+      getterFunction.includes("Date") ||
+      getterFunction.includes("date")
     ) {
       return "date";
     }
