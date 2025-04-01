@@ -1,18 +1,19 @@
-import { type FC } from 'react';
+import { Table } from '@tanstack/react-table';
 import { ListTheme, type ListSchema } from '../types/ListSchema';
 
 type SelectionToolbarProps<T> = {
-  selectedRows: T[];
+  table: Table<T>;
   selectedActions?: NonNullable<ListSchema<T>['options']>['selectedActions'];
   theme?: ListTheme['selection']['toolbar'];
 };
 
-// Change the component to be generic
 export const SelectionToolbar = <T extends object>({
-  selectedRows,
+  table,
   selectedActions,
   theme,
 }: SelectionToolbarProps<T>) => {
+  const selectedRows = table.getSelectedRowModel().rows.map(row => row.original);
+  
   if (!selectedRows.length || !selectedActions?.length) return null;
 
   return (

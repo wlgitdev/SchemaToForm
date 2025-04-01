@@ -5,9 +5,7 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
-  RowSelectionState,
   getSortedRowModel,
-  CellContext,
   ColumnDef,
   createColumnHelper,
   SortingState,
@@ -23,7 +21,6 @@ import {
   ActionItem,
   ColumnDefinition,
   ColumnFilterOptions,
-  ColumnType,
   DataType,
   ListSchema,
   PrimitiveType,
@@ -429,16 +426,9 @@ export const DynamicList = <T extends object>({
     schema.options?.groupBy ? [schema.options.groupBy.field as string] : []
   );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>(
-    initialRowSelection || {}
-  );
 
   // Data fetching with react-query
-  const {
-    data = [],
-    isLoading,
-    error,
-  } = useQuery<T[], Error>({
+  const { data = [], isLoading, error } = useQuery<T[], Error>({
     queryKey,
     queryFn,
   }) as QueryState<T>;
@@ -566,7 +556,6 @@ export const DynamicList = <T extends object>({
     data: data ?? [],
     columns,
     state: {
-      rowSelection,
       sorting,
       grouping,
       expanded,
@@ -576,9 +565,8 @@ export const DynamicList = <T extends object>({
     onGroupingChange: setGrouping,
     onExpandedChange: setExpanded,
     getExpandedRowModel: getExpandedRowModel(),
-    enableRowSelection: true,
+    enableRowSelection: schema.options?.selection?.enabled ?? false,
     enableMultiRowSelection: schema.options?.selection?.type === "multi",
-    onRowSelectionChange: setRowSelection,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -596,13 +584,12 @@ export const DynamicList = <T extends object>({
         ? [schema.options.groupBy.field as string]
         : [],
       expanded: schema.options?.groupBy?.expanded ? true : {},
+      rowSelection: initialRowSelection ?? {},
     },
   });
 
-  const selectedRows = useMemo(
-    () => table.getSelectedRowModel().rows.map((row) => row.original as T),
-    [table, rowSelection]
-  );
+  const selectedRows = table.getSelectedRowModel().rows.map(row => row.original);
+
 
   const columnFilterOptions = useMemo(() => {
     const options = new Map<string, ColumnFilterOptions>();
@@ -645,7 +632,7 @@ export const DynamicList = <T extends object>({
   // Call the onSelect callback when selection changes
   useEffect(() => {
     schema.options?.selection?.onSelect?.(selectedRows);
-  }, [selectedRows]);
+  }, [table.getState().rowSelection]);
   if (isLoading) {
     return <div className={theme.loading}>Loading...</div>;
   }
@@ -657,7 +644,7 @@ export const DynamicList = <T extends object>({
   return (
     <div className={className}>
       <SelectionToolbar
-        selectedRows={selectedRows}
+        table={table}
         selectedActions={schema.options?.selectedActions}
         theme={theme?.selection?.toolbar}
       />
