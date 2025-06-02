@@ -1,305 +1,18 @@
-import { DynamicList, ListSchema } from "@schematoform/schema-to-ui";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { DynamicList } from "@schematoform/schema-to-ui";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from "@tanstack/react-query";
+import { userSchema } from "../schemas/userSchema";
+import { User, UserList } from "@/types/User";
+import { DepartmentsApi, UsersApi } from "../api";
+import { Department } from "@/types/Department";
 
-interface TestItem {
-  id: number;
-  name: string;
-  age: number;
-  isActive: boolean;
-  createdAt: Date;
-  tags: string[];
-  department: {
-    id: number;
-    name: string;
-  };
-  actions?: Array<{
-    label: string;
-    variant?: "primary" | "secondary" | "text" | "link";
-    icon?: string;
-    onClick: () => void;
-  }>;
-}
+const usersApi = new UsersApi();
+const departmentsApi = new DepartmentsApi();
 
-const testSchema: ListSchema<TestItem> = {
-  columns: {
-    name: {
-      label: "Name",
-      field: "name",
-      type: "text",
-      sortable: true,
-      filterable: true,
-      format: {
-        text: {
-          truncate: 20,
-          transform: "capitalize",
-        },
-      },
-    },
-    age: {
-      label: "Age",
-      field: "age",
-      type: "number",
-      sortable: true,
-      filterable: true, 
-      format: {
-        number: {
-          precision: 0,
-        },
-      },
-    },
-    isActive: {
-      label: "Status",
-      field: "isActive",
-      type: "boolean",
-      sortable: true,
-      filterable: true, // Enable boolean filtering
-      format: {
-        boolean: {
-          trueText: "✅",
-          falseText: "❌",
-        },
-      },
-      className: (row) => (row.isActive ? "text-green-600" : "text-red-600"),
-    },
-    createdAt: {
-      label: "Created",
-      field: "createdAt",
-      type: "date",
-      sortable: true,
-      filterable: true, // Enable date range filtering
-      format: {
-        date: {
-          relative: true,
-        },
-      },
-    },
-    tags: {
-      label: "Tags",
-      field: "tags",
-      type: "array",
-      sortable: true,
-      filterable: true, // Enable array filtering
-      format: {
-        array: {
-          maxItems: 2,
-          separator: ", ",
-          more: "more...",
-        },
-      },
-    },
-    department: {
-      label: "Department",
-      field: "department",
-      type: "reference",
-      sortable: true,
-      filterable: true, // Enable reference filtering
-      format: {
-        reference: {
-          labelField: "name",
-          fallback: "Unknown",
-        },
-      },
-    },
-    actions: {
-      label: "Actions",
-      field: "actions",
-      type: "action",
-      format: {
-        action: {
-          label: "View",
-          variant: "primary",
-        }
-      },
-      sortable: false
-    }
-  },
-  options: {
-    pagination: {
-      enabled: true,
-      pageSize: 5,
-      pageSizeOptions: [5, 10, 20],
-    },
-
-    // Selection configuration
-    selection: {
-      enabled: true,
-      type: "multi",
-      onSelect: (selectedRows) => console.log("Selected:", selectedRows),
-    },
-
-    // Grouping configuration
-    groupBy: {
-      field: "department",
-      expanded: true,
-      showCounts: true,
-    },
-
-    // Default sorting
-    defaultSort: {
-      field: "name",
-      direction: "asc",
-    },
-
-    // Row actions
-
-    // Add row-level actions
-    rowActions: {
-      onClick: (row) => console.log("Row clicked:", row),
-      onDoubleClick: (row) => console.log("Row double clicked:", row),
-    },
-
-    // Selected actions
-    selectedActions: [
-      {
-        label: "Delete Selected",
-        onClick: (selectedRows) => {
-          console.log("Delete:", selectedRows);
-          alert(`Would delete ${selectedRows.length} items`);
-        },
-        // Disable if more than 3 items selected
-        disabled: (selectedRows) => selectedRows.length > 3,
-      },
-      {
-        label: "Export Selected",
-        onClick: (selectedRows) => {
-          console.log("Export:", selectedRows);
-          alert(`Would export ${selectedRows.length} items`);
-        },
-      },
-      {
-        label: "Activate Selected",
-        onClick: (selectedRows) => {
-          console.log("Activate:", selectedRows);
-          alert(`Would activate ${selectedRows.length} items`);
-        },
-        // Only enable if all selected items are inactive
-        disabled: (selectedRows) => !selectedRows.every(row => !row.isActive),
-      }
-    ],
-  },
-};
-
-const initialMockData: TestItem[] = [
-  {
-    id: 1,
-    name: "John Doe",
-    age: 30,
-    isActive: true,
-    createdAt: new Date("2024-01-01"),
-    tags: ["frontend", "react", "typescript"],
-    department: { id: 1, name: "Engineering" },
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    age: 28,
-    isActive: false,
-    createdAt: new Date(),
-    department: { id: 2, name: "Marketing" },
-    tags: ["SEO", "content", "branding"],
-  },
-  {
-    id: 3,
-    name: "Alice Johnson",
-    age: 35,
-    isActive: true,
-    createdAt: new Date(),
-    department: { id: 1, name: "Engineering" },
-    tags: ["backend", "node.js", "databases"],
-  },
-  {
-    id: 4,
-    name: "Bob Brown",
-    age: 40,
-    isActive: false,
-    createdAt: new Date(),
-    department: { id: 3, name: "HR" },
-    tags: ["recruitment", "policy", "training"],
-  },
-  {
-    id: 5,
-    name: "Charlie Davis",
-    age: 25,
-    isActive: true,
-    createdAt: new Date(),
-    department: { id: 2, name: "Marketing" },
-    tags: ["social media", "ads", "copywriting"],
-  },
-  {
-    id: 6,
-    name: "Diana Prince",
-    age: 32,
-    isActive: true,
-    createdAt: new Date(),
-    department: { id: 4, name: "Finance" },
-    tags: ["accounting", "budgeting", "taxation"],
-  },
-  {
-    id: 7,
-    name: "Ethan Hunt",
-    age: 29,
-    isActive: false,
-    createdAt: new Date(),
-    department: { id: 5, name: "Operations" },
-    tags: ["logistics", "supply chain", "efficiency"],
-  },
-  {
-    id: 8,
-    name: "Fiona Gallagher",
-    age: 38,
-    isActive: true,
-    createdAt: new Date(),
-    department: { id: 1, name: "Engineering" },
-    tags: ["fullstack", "java", "cloud computing"],
-  },
-  {
-    id: 9,
-    name: "George Miller",
-    age: 45,
-    isActive: false,
-    createdAt: new Date(),
-    department: { id: 3, name: "HR" },
-    tags: ["employee relations", "compensation", "benefits"],
-  },
-  {
-    id: 10,
-    name: "Hannah Wilson",
-    age: 27,
-    isActive: true,
-    createdAt: new Date(),
-    department: { id: 2, name: "Marketing" },
-    tags: ["branding", "campaigns", "market research"],
-  },
-  {
-    id: 11,
-    name: "Ian Curtis",
-    age: 31,
-    isActive: false,
-    createdAt: new Date(),
-    department: { id: 4, name: "Finance" },
-    tags: ["auditing", "financial analysis", "compliance"],
-  },
-  {
-    id: 14,
-    name: "WL Record",
-    age: 31,
-    isActive: false,
-    createdAt: new Date(),
-    department: { id: 4, name: "Finance" },
-    tags: ["auditing", "financial analysis", "compliance"],
-  },
-  {
-    id: 12,
-    name: "Jack Sparrow",
-    age: 36,
-    isActive: true,
-    createdAt: new Date(),
-    department: { id: 5, name: "Operations" },
-    tags: ["risk management", "workflow optimization", "logistics"],
-  },
-];
-
-const generateActions = (name: string): TestItem['actions'] => [
+const generateActions = (name: string): UserList["actions"] => [
   {
     label: "Edit",
     variant: "primary",
@@ -309,32 +22,56 @@ const generateActions = (name: string): TestItem['actions'] => [
     label: "Delete",
     variant: "secondary",
     onClick: () => console.log(`Delete clicked for ${name}`),
-  }
+  },
 ];
-
-const mockData: TestItem[] = initialMockData.map(item => ({
-  ...item,
-  actions: generateActions(item.name)
-}));
 
 const queryClient = new QueryClient();
 
-export const ListTestPage = () => {
-  const fetchData = async function () {
-    return mockData;
-  };
+const fetchUsers = async (): Promise<User[]> => {
+  return usersApi.getAll();
+};
+
+const fetchUsersList = async (): Promise<UserList[]> => {
+  const users = await fetchUsers();
+  return users.map((user: User) => ({
+    ...user,
+    actions: generateActions(user.name),
+  }));
+};
+
+const fetchDepartments = async (): Promise<Department[]> => {
+  return departmentsApi.getAll();
+};
+
+const ListTestPageContent = () => {
+  useQuery({
+    queryKey: ["departments"],
+    queryFn: fetchDepartments,
+  });
+
+  useQuery({
+    queryKey: ["users"],
+    queryFn: fetchUsers,
+  });
 
   return (
+    <div className="p-4">
+      <h1 className="text-2xl mb-4">Dynamic List Test</h1>
+      <DynamicList<User>
+        schema={userSchema}
+        queryKey={["users"]}
+        queryFn={fetchUsersList}
+        className="w-full"
+        queryClient={queryClient}
+      />
+    </div>
+  );
+};
+
+export const ListTestPage = () => {
+  return (
     <QueryClientProvider client={queryClient}>
-      <div className="p-4">
-        <h1 className="text-2xl mb-4">Dynamic List Test</h1>
-        <DynamicList<TestItem>
-          schema={testSchema}
-          queryKey={["test-items"]}
-          queryFn={fetchData}
-          className="w-full"
-        />
-      </div>
+      <ListTestPageContent />
     </QueryClientProvider>
   );
 };

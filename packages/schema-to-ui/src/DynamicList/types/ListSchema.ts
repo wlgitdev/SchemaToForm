@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { ReactNode } from 'react';
+import { z } from "zod";
+import { ReactNode } from "react";
 
 export interface ListTheme {
   table: {
@@ -8,7 +8,7 @@ export interface ListTheme {
       container: string;
       cell: string;
       sortIcon: string;
-      filterInput: string; 
+      filterInput: string;
       select?: {
         container?: string;
         control?: string;
@@ -114,8 +114,22 @@ export interface ColumnFormat<T = unknown> {
   };
 }
 
-export type ColumnType = "text" | "number" | "date" | "boolean" | "array" | "reference" | "action";
+export type ColumnType =
+  | "text"
+  | "number"
+  | "date"
+  | "boolean"
+  | "array"
+  | "reference"
+  | "action";
 
+export type ReferenceConfig = {
+  queryKey: readonly unknown[];
+  collection: string;
+  valueField: string;
+  labelField: string;
+  fallback?: string;
+};
 // Column definition with proper typing
 export interface ColumnDefinition<T = unknown> {
   label: string;
@@ -130,11 +144,7 @@ export interface ColumnDefinition<T = unknown> {
   enableGrouping?: boolean;
 
   // Reference configuration
-  reference?: {
-    queryKey: readonly unknown[];
-    collection: string;
-    valueField?: string;
-  };
+  reference?: ReferenceConfig;
 }
 
 // Main schema interface
@@ -177,37 +187,60 @@ export interface ListSchema<T = unknown> {
 
 // Schema validation
 export const listSchemaValidator = z.object({
-  columns: z.record(z.string(), z.object({
-    label: z.string(),
-    field: z.string(),
-    type: z.enum(["text", "number", "date", "boolean", "array", "reference", "action"]),
-    width: z.union([z.number(), z.string()]).optional(),
-    sortable: z.boolean().optional(),
-    filterable: z.boolean().optional(),
-    visible: z.union([z.boolean(), z.function()]).optional(),
-    className: z.union([z.string(), z.function()]).optional(),
-    format: z.object({}).optional(),
-  })),
-  options: z.object({
-    pagination: z.object({
-      enabled: z.boolean(),
-      pageSize: z.number().optional(),
-      pageSizeOptions: z.array(z.number()).optional()
-    }).optional(),
-    selection: z.object({
-      enabled: z.boolean(),
-      type: z.enum(["single", "multi"]),
-      onSelect: z.function().optional()
-    }).optional(),
-    groupBy: z.object({
-      field: z.string(),
-      expanded: z.boolean().optional(),
-      showCounts: z.boolean().optional()
-    }).optional(),
-    selectedActions: z.array(z.object({
+  columns: z.record(
+    z.string(),
+    z.object({
       label: z.string(),
-      onClick: z.function(),
-      disabled: z.union([z.boolean(), z.function()]).optional()
-    })).optional()
-  }).optional()
+      field: z.string(),
+      type: z.enum([
+        "text",
+        "number",
+        "date",
+        "boolean",
+        "array",
+        "reference",
+        "action",
+      ]),
+      width: z.union([z.number(), z.string()]).optional(),
+      sortable: z.boolean().optional(),
+      filterable: z.boolean().optional(),
+      visible: z.union([z.boolean(), z.function()]).optional(),
+      className: z.union([z.string(), z.function()]).optional(),
+      format: z.object({}).optional(),
+    })
+  ),
+  options: z
+    .object({
+      pagination: z
+        .object({
+          enabled: z.boolean(),
+          pageSize: z.number().optional(),
+          pageSizeOptions: z.array(z.number()).optional(),
+        })
+        .optional(),
+      selection: z
+        .object({
+          enabled: z.boolean(),
+          type: z.enum(["single", "multi"]),
+          onSelect: z.function().optional(),
+        })
+        .optional(),
+      groupBy: z
+        .object({
+          field: z.string(),
+          expanded: z.boolean().optional(),
+          showCounts: z.boolean().optional(),
+        })
+        .optional(),
+      selectedActions: z
+        .array(
+          z.object({
+            label: z.string(),
+            onClick: z.function(),
+            disabled: z.union([z.boolean(), z.function()]).optional(),
+          })
+        )
+        .optional(),
+    })
+    .optional(),
 });

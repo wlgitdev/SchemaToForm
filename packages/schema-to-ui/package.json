@@ -1,14 +1,10 @@
 {
   "name": "@schematoform/schema-to-ui",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Test implementation of Schema Registry",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "example": "ts-node src/examples/userForm.ts",
-    "dev": "ts-node-dev --respawn src/examples/userForm.ts"
+    "build": "tsc"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.67.1",

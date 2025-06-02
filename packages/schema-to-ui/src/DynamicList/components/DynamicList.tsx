@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { QueryClient, useQuery } from "@tanstack/react-query";
 import {
   useReactTable,
   getCoreRowModel,
@@ -29,6 +29,7 @@ import { ListHeader } from "./ListHeader";
 import { ListBody } from "./ListBody";
 import { SelectionToolbar } from "./SelectionToolbar";
 import { useListTheme } from "../contexts/ListThemeContext";
+import { useReferenceResolver } from "../hooks/useReferenceResolver";
 
 const isReferenceValue = (value: unknown): value is Record<string, unknown> => {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -113,15 +114,16 @@ const formatCellValue = <T extends object>(
     }
 
     case "date": {
-      const dateValue = typedValue instanceof Date 
-        ? typedValue 
-        : new Date(typedValue as string);
-          
+      const dateValue =
+        typedValue instanceof Date
+          ? typedValue
+          : new Date(typedValue as string);
+
       // Validate the date before formatting
       if (isNaN(dateValue.getTime())) {
         return "-";
       }
-    
+
       if (format?.date) {
         if (format.date.relative) {
           return new Intl.RelativeTimeFormat().format(
@@ -179,6 +181,7 @@ type DynamicListProps<T extends object> = {
   schema: ListSchema<T>;
   queryKey: readonly unknown[];
   queryFn: () => Promise<T[]>;
+  queryClient: QueryClient;
   className?: string;
   initialRowSelection?: Record<string, boolean>;
 };
@@ -416,6 +419,7 @@ export const DynamicList = <T extends object>({
   schema,
   queryKey,
   queryFn,
+  queryClient,
   className,
   initialRowSelection,
 }: DynamicListProps<T>) => {
@@ -428,22 +432,26 @@ export const DynamicList = <T extends object>({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
   // Data fetching with react-query
-  const { data = [], isLoading, error } = useQuery<T[], Error>({
+  const {
+    data: rawData = [],
+    isLoading,
+    error,
+  } = useQuery<T[], Error>({
     queryKey,
     queryFn,
-  }) as QueryState<T>;
+  });
+
+  const data = useReferenceResolver(rawData, schema, queryClient);
 
   const initialExpanded = React.useMemo(() => {
     if (!schema.options?.groupBy?.expanded) return {};
 
-    // Create a map of all unique group values
     const groupMap: Record<string, boolean> = {};
     const groupField = schema.options.groupBy.field as string;
 
     data.forEach((row) => {
       const value = row[schema.options!.groupBy!.field as keyof T];
       if (isReferenceValue(value)) {
-        // For reference types, use the name field as the group value
         groupMap[`${groupField}:${value.name}`] = true;
       } else {
         groupMap[`${groupField}:${String(value)}`] = true;
@@ -588,8 +596,9 @@ export const DynamicList = <T extends object>({
     },
   });
 
-  const selectedRows = table.getSelectedRowModel().rows.map(row => row.original);
-
+  const selectedRows = table
+    .getSelectedRowModel()
+    .rows.map((row) => row.original);
 
   const columnFilterOptions = useMemo(() => {
     const options = new Map<string, ColumnFilterOptions>();
