@@ -442,32 +442,38 @@ const getColumnFilterFn = <T extends object>(
       return filterFn;
     }
     case "reference": {
-      if (col.reference?.isArray) {
-        // Handle reference array filtering (same as array)
-        const filterFn: FilterFn<T> = (
-          row: Row<T>,
-          columnId: string,
-          filterValue: string[]
-        ) => {
-          if (!filterValue?.length) return true;
+      const filterFn: FilterFn<T> = (
+        row: Row<T>,
+        columnId: string,
+        filterValue: string[]
+      ) => {
+        if (!filterValue?.length) return true;
 
-          const value = row.getValue(columnId) as unknown[];
-          if (!Array.isArray(value)) return false;
+        const value = row.getValue(columnId);
+        const isArray = col.reference?.isArray;
+        const labelField = col.format?.reference?.labelField;
 
-          const labelField = col.format?.reference?.labelField;
+        if (isArray && Array.isArray(value)) {
+          // Handle reference array filtering
           const formatItem = (item: unknown) =>
             labelField && typeof item === "object" && item !== null
               ? String((item as any)[labelField])
               : String(item);
-
           const rowValues = value.map(formatItem);
           return filterValue.some((filter) =>
             rowValues.some((val) => val === filter)
           );
-        };
-        return filterFn;
-      }
-      return () => true;
+        } else if (!isArray && typeof value === "object" && value !== null) {
+          // Handle single reference filtering
+          const referenceValue = labelField
+            ? String((value as any)[labelField])
+            : String(value);
+          return filterValue.includes(referenceValue);
+        }
+
+        return false;
+      };
+      return filterFn;
     }
     default: {
       const filterFn: FilterFn<T> = (
@@ -688,7 +694,17 @@ export const DynamicList = <T extends object>({
         const uniqueItems = new Set<string>();
         data.forEach((row) => {
           const value = row[typedCol.field as keyof T];
-          if (Array.isArray(value)) {
+
+          if (typedCol.type === "reference" && !typedCol.reference?.isArray) {
+            // Handle single reference
+            if (value && typeof value === "object") {
+              const labelField =
+                typedCol.format?.reference?.labelField || "name";
+              const label = (value as any)[labelField];
+              if (label) uniqueItems.add(String(label));
+            }
+          } else if (Array.isArray(value)) {
+            // Handle arrays (both regular and reference arrays)
             value.forEach((item) => {
               let formatted: string;
 
