@@ -254,21 +254,25 @@ export class MongooseSchemaAdapter extends BaseSchemaAdapter<Schema> {
     sortableFields: string[]
   ): ColumnDefinition<any> {
     const isSortable = this.isSortableField(fieldName, sortableFields);
+    const reference = this.processReference(schemaType);
+    const isArray = this.isArrayReference(schemaType);
 
     const baseColumn: ColumnDefinition<any> = {
       label: this.formatFieldLabel(fieldName),
       field: fieldName as any,
       type: this.determineListColumnType(schemaType),
       sortable: isSortable,
+      filterable: false, // Default to false, can be overridden
     };
 
-    // Add reference configuration if it's a reference field
-    const reference = this.processReference(schemaType);
     if (reference) {
       baseColumn.reference = {
         queryKey: [`${reference.modelName.toLowerCase()}-list`],
         collection: reference.modelName,
         valueField: "_id",
+        labelField: reference.displayField,
+        fallback: "-",
+        isArray: isArray,
       };
 
       // Add format for reference display
@@ -276,8 +280,19 @@ export class MongooseSchemaAdapter extends BaseSchemaAdapter<Schema> {
         reference: {
           labelField: reference.displayField,
           fallback: "-",
+          filter: {
+            isMulti: isArray,
+            placeholder: `Filter by ${this.formatFieldLabel(fieldName)}...`,
+            noOptionsMessage: `No ${reference.modelName.toLowerCase()} found`,
+            isClearable: true,
+            isSearchable: true,
+            maxMenuHeight: 200,
+          },
         },
       };
+
+      // Enable filtering for reference fields
+      baseColumn.filterable = true;
     }
 
     // Handle enums
@@ -293,6 +308,26 @@ export class MongooseSchemaAdapter extends BaseSchemaAdapter<Schema> {
       };
     }
 
+    // Handle array types (non-reference)
+    if (schemaType.instance === "Array" && !reference) {
+      baseColumn.type = "array";
+      baseColumn.format = {
+        array: {
+          separator: ", ",
+          maxItems: 3,
+          more: "...",
+          filter: {
+            isMulti: true,
+            placeholder: `Filter by ${this.formatFieldLabel(fieldName)}...`,
+            isClearable: true,
+            isSearchable: true,
+            maxMenuHeight: 200,
+          },
+        },
+      };
+      baseColumn.filterable = true;
+    }
+
     // Add specific format for dates
     if (baseColumn.type === "date") {
       baseColumn.format = {
@@ -303,15 +338,31 @@ export class MongooseSchemaAdapter extends BaseSchemaAdapter<Schema> {
       };
     }
 
+    // Add format for booleans
+    if (baseColumn.type === "boolean") {
+      baseColumn.format = {
+        boolean: {
+          trueText: "Yes",
+          falseText: "No",
+        },
+      };
+    }
+
+    // Add format for numbers
+    if (baseColumn.type === "number") {
+      baseColumn.format = {
+        number: {
+          precision: 2,
+        },
+      };
+    }
+
     return baseColumn;
   }
 
   private determineFieldType(schemaType: MongooseFieldType): UIFieldType {
     // Handle array references
-    if (
-      Array.isArray(schemaType.options.type) &&
-      schemaType.options.type[0]?.ref
-    ) {
+    if (this.isArrayReference(schemaType)) {
       return "multiselect";
     }
 
@@ -335,31 +386,39 @@ export class MongooseSchemaAdapter extends BaseSchemaAdapter<Schema> {
   }
 
   private determineListColumnType(schemaType: MongooseFieldType): ColumnType {
-    // Handle array references
-    if (
-      Array.isArray(schemaType.options.type) &&
-      schemaType.options.type[0]?.ref
-    ) {
+    // Handle references (both single and array)
+    if (this.hasReference(schemaType)) {
       return "reference";
     }
 
-    // Handle single references
-    if (schemaType.options.ref) {
-      return "reference";
+    // Handle array types (non-reference)
+    if (schemaType.instance === "Array") {
+      return "array";
     }
 
     // Use standard type mapping
     return this.listTypeMapping[schemaType.instance] || "text";
   }
 
+  private hasReference(schemaType: MongooseFieldType): boolean {
+    return !!(
+      schemaType.options.ref ||
+      (Array.isArray(schemaType.options.type) &&
+        schemaType.options.type[0]?.ref)
+    );
+  }
+
+  private isArrayReference(schemaType: MongooseFieldType): boolean {
+    return !!(
+      Array.isArray(schemaType.options.type) && schemaType.options.type[0]?.ref
+    );
+  }
+
   processReference(
     schemaType: MongooseFieldType
   ): UIFieldReference | undefined {
     // Handle array references
-    if (
-      Array.isArray(schemaType.options.type) &&
-      schemaType.options.type[0]?.ref
-    ) {
+    if (this.isArrayReference(schemaType)) {
       return {
         modelName: schemaType.options.type[0].ref,
         displayField: "name",
@@ -434,6 +493,7 @@ export class MongooseSchemaAdapter extends BaseSchemaAdapter<Schema> {
           field: virtualPath as any,
           type: columnType,
           sortable: this.isSortableField(virtualPath, sortableFields),
+          filterable: false, // Virtuals typically aren't filterable
         };
 
         // Add specific formatting based on column type
