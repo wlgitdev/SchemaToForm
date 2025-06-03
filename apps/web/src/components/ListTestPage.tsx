@@ -8,9 +8,12 @@ import { userSchema } from "../schemas/userSchema";
 import { User, UserList } from "@/types/User";
 import { DepartmentsApi, UsersApi } from "../api";
 import { Department } from "@/types/Department";
+import { Skill } from "@/types/Skill";
+import { SkillsApi } from "@/api/skills";
 
 const usersApi = new UsersApi();
 const departmentsApi = new DepartmentsApi();
+const skillsApi = new SkillsApi();
 
 const generateActions = (name: string): UserList["actions"] => [
   {
@@ -43,10 +46,19 @@ const fetchDepartments = async (): Promise<Department[]> => {
   return departmentsApi.getAll();
 };
 
+const fetchSkills = async (): Promise<Skill[]> => {
+  return skillsApi.getAll();
+};
+
 const ListTestPageContent = () => {
   useQuery({
     queryKey: ["departments"],
     queryFn: fetchDepartments,
+  });
+
+  useQuery({
+    queryKey: ["skills"],
+    queryFn: fetchSkills,
   });
 
   useQuery({

@@ -8,6 +8,7 @@ export interface User {
   createdAt: Date;
   tags: string[];
   department: number; // department reference
+  skills?: number[]; // skills reference
 }
 
 export interface UserList extends User, ListActions {}

@@ -33,7 +33,7 @@ export const userSchema: ListSchema<UserList> = {
       field: "isActive",
       type: "boolean",
       sortable: true,
-      filterable: true, // Enable boolean filtering
+      filterable: true,
       format: {
         boolean: {
           trueText: "✅",
@@ -47,7 +47,7 @@ export const userSchema: ListSchema<UserList> = {
       field: "createdAt",
       type: "date",
       sortable: true,
-      filterable: true, // Enable date range filtering
+      filterable: true,
       format: {
         date: {
           relative: true,
@@ -59,12 +59,18 @@ export const userSchema: ListSchema<UserList> = {
       field: "tags",
       type: "array",
       sortable: true,
-      filterable: true, // Enable array filtering
+      filterable: true,
       format: {
         array: {
           maxItems: 2,
           separator: ", ",
           more: "more...",
+          filter: {
+            isMulti: true,
+            placeholder: "Filter by tags...",
+            isSearchable: true,
+            isClearable: true,
+          },
         },
       },
     },
@@ -80,11 +86,45 @@ export const userSchema: ListSchema<UserList> = {
         valueField: "id",
         labelField: "name",
         fallback: "No Department",
+        isArray: false,
       },
       format: {
         reference: {
           labelField: "name",
           fallback: "Unknown",
+          filter: {
+            isMulti: false,
+            placeholder: "Filter by department...",
+            isSearchable: true,
+            isClearable: true,
+          },
+        },
+      },
+    },
+    skills: {
+      label: "Skills",
+      field: "skills",
+      type: "reference",
+      sortable: true,
+      filterable: true,
+      reference: {
+        queryKey: ["skills"],
+        collection: "skills",
+        valueField: "id",
+        labelField: "name",
+        fallback: "No Skills",
+        isArray: true,
+      },
+      format: {
+        reference: {
+          labelField: "name",
+          fallback: "No Skills",
+          filter: {
+            isMulti: true,
+            placeholder: "Filter by skills...",
+            isSearchable: true,
+            isClearable: true,
+          },
         },
       },
     },

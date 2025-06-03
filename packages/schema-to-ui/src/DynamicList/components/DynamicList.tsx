@@ -49,9 +49,9 @@ const formatCellValue = <T extends object>(
     return String(value);
   }
 
-  // Add handling for action type
+  // Handle action type
   if (col.type === "action" && Array.isArray(value)) {
-    const actions = value as ActionItem[]; // Type assertion here is safe because we've verified the column type
+    const actions = value as ActionItem[];
     return (
       <div className="flex gap-2">
         {actions.map((action, index) => (
@@ -71,12 +71,34 @@ const formatCellValue = <T extends object>(
     );
   }
 
-  // Handle reference type separately
-  if (col.type === "reference" && isReferenceValue(value)) {
-    const labelField = format.reference?.labelField;
-    return labelField && value[labelField]
-      ? String(value[labelField]) // Ensure string conversion
-      : format.reference?.fallback ?? "-";
+  // Handle reference type (both single and array)
+  if (col.type === "reference") {
+    const isArray = col.reference?.isArray;
+
+    if (isArray && Array.isArray(value)) {
+      // Handle array of references
+      const referenceArray = value as Record<string, unknown>[];
+      const labelField = format.reference?.labelField;
+
+      if (!labelField || !referenceArray.length) {
+        return format.reference?.fallback ?? "-";
+      }
+
+      const labels = referenceArray
+        .map((ref) => ref[labelField])
+        .filter(Boolean)
+        .map(String);
+
+      return labels.length > 0
+        ? labels.join(", ")
+        : format.reference?.fallback ?? "-";
+    } else if (!isArray && isReferenceValue(value)) {
+      // Handle single reference
+      const labelField = format.reference?.labelField;
+      return labelField && value[labelField]
+        ? String(value[labelField])
+        : format.reference?.fallback ?? "-";
+    }
   }
 
   // Handle other types
@@ -198,9 +220,30 @@ const getTypeSortingFn = <T extends object>(col: ColumnDefinition<T>) => {
         const a = rowA.getValue(columnId) as Record<string, unknown>;
         const b = rowB.getValue(columnId) as Record<string, unknown>;
         const labelField = col.format?.reference?.labelField;
-        const aValue = (a?.[labelField as string] as string) ?? "";
-        const bValue = (b?.[labelField as string] as string) ?? "";
-        return aValue.localeCompare(bValue);
+        const isArray = col.reference?.isArray;
+
+        if (isArray) {
+          // Handle array reference sorting
+          const aArray = Array.isArray(a) ? a : [];
+          const bArray = Array.isArray(b) ? b : [];
+
+          // Sort by first item's label or array length
+          const aValue =
+            aArray.length > 0 && labelField
+              ? String(aArray[0][labelField] ?? "")
+              : aArray.length.toString();
+          const bValue =
+            bArray.length > 0 && labelField
+              ? String(bArray[0][labelField] ?? "")
+              : bArray.length.toString();
+
+          return aValue.localeCompare(bValue);
+        } else {
+          // Handle single reference sorting
+          const aValue = a && labelField ? String(a[labelField] ?? "") : "";
+          const bValue = b && labelField ? String(b[labelField] ?? "") : "";
+          return aValue.localeCompare(bValue);
+        }
       };
 
     case "date":
@@ -398,7 +441,34 @@ const getColumnFilterFn = <T extends object>(
       };
       return filterFn;
     }
+    case "reference": {
+      if (col.reference?.isArray) {
+        // Handle reference array filtering (same as array)
+        const filterFn: FilterFn<T> = (
+          row: Row<T>,
+          columnId: string,
+          filterValue: string[]
+        ) => {
+          if (!filterValue?.length) return true;
 
+          const value = row.getValue(columnId) as unknown[];
+          if (!Array.isArray(value)) return false;
+
+          const labelField = col.format?.reference?.labelField;
+          const formatItem = (item: unknown) =>
+            labelField && typeof item === "object" && item !== null
+              ? String((item as any)[labelField])
+              : String(item);
+
+          const rowValues = value.map(formatItem);
+          return filterValue.some((filter) =>
+            rowValues.some((val) => val === filter)
+          );
+        };
+        return filterFn;
+      }
+      return () => true;
+    }
     default: {
       const filterFn: FilterFn<T> = (
         row: Row<T>,
@@ -605,22 +675,39 @@ export const DynamicList = <T extends object>({
 
     Object.entries(schema.columns).forEach(([key, col]) => {
       const typedCol = col as ColumnDefinition<T>;
-      if (typedCol.type === "array" && typedCol.filterable) {
+
+      // Handle both array and reference array columns
+      if (
+        (typedCol.type === "array" ||
+          (typedCol.type === "reference" && typedCol.reference?.isArray)) &&
+        typedCol.filterable
+      ) {
         const column = table.getColumn(key);
         if (!column) return;
 
-        // Get unique values across all rows for this column
         const uniqueItems = new Set<string>();
         data.forEach((row) => {
           const value = row[typedCol.field as keyof T];
           if (Array.isArray(value)) {
             value.forEach((item) => {
-              // Safely convert items to strings using the formatter or a safe conversion
-              const formatted = typedCol.format?.array?.itemFormatter
-                ? String(typedCol.format.array.itemFormatter(item))
-                : typeof item === "object"
-                ? JSON.stringify(item)
-                : String(item);
+              let formatted: string;
+
+              if (typedCol.type === "reference") {
+                // For reference arrays, use the labelField
+                const labelField = typedCol.format?.reference?.labelField;
+                formatted =
+                  labelField && typeof item === "object" && item !== null
+                    ? String((item as any)[labelField])
+                    : String(item);
+              } else {
+                // For regular arrays, use itemFormatter or string conversion
+                formatted = typedCol.format?.array?.itemFormatter
+                  ? String(typedCol.format.array.itemFormatter(item))
+                  : typeof item === "object"
+                  ? JSON.stringify(item)
+                  : String(item);
+              }
+
               uniqueItems.add(formatted);
             });
           }

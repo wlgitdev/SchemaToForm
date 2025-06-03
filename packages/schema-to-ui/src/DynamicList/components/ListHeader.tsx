@@ -30,10 +30,13 @@ const FilterControl = <T extends object>({
   if (!columnDef.filterable) return null;
 
   switch (columnDef.type) {
-    case "array": {
+    case "array":
+    case "reference": {
+      // Handle both array and reference array filtering
       if (!filterOptions) return null;
 
-      const filterConfig = columnDef.format?.array?.filter;
+      const filterConfig =
+        columnDef.format?.array?.filter || columnDef.format?.reference?.filter;
       const isMulti = filterConfig?.isMulti ?? true;
       const currentValue = (column.getFilterValue() as string[]) || [];
 

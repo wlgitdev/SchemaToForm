@@ -41,13 +41,25 @@ export const useReferenceResolver = <T extends Record<string, any>>(
       const enhancedRow = { ...row };
 
       referenceColumns.forEach(({ field, config }) => {
-        const referenceId = row[field];
-        if (referenceId != null) {
-          const lookupMap = referenceMaps.get(config.collection);
-          const referencedEntity = lookupMap?.get(referenceId);
+        const referenceValue = row[field];
 
-          if (referencedEntity) {
-            enhancedRow[field] = referencedEntity;
+        if (referenceValue != null) {
+          const lookupMap = referenceMaps.get(config.collection);
+
+          if (config.isArray && Array.isArray(referenceValue)) {
+            // Handle array of reference IDs
+            const resolvedArray = referenceValue
+              .map((id: any) => lookupMap?.get(id))
+              .filter(Boolean);
+
+            enhancedRow[field] =
+              resolvedArray.length > 0 ? resolvedArray : null;
+          } else {
+            // Handle single reference ID
+            const referencedEntity = lookupMap?.get(referenceValue);
+            if (referencedEntity) {
+              enhancedRow[field] = referencedEntity;
+            }
           }
         }
       });

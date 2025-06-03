@@ -104,6 +104,14 @@ export interface ColumnFormat<T = unknown> {
   reference?: {
     labelField: string;
     fallback?: ReactNode;
+    filter?: {
+      isMulti?: boolean;
+      placeholder?: string;
+      noOptionsMessage?: string;
+      isClearable?: boolean;
+      isSearchable?: boolean;
+      maxMenuHeight?: number;
+    };
   };
   action?: {
     label?: string;
@@ -129,6 +137,7 @@ export type ReferenceConfig = {
   valueField: string;
   labelField: string;
   fallback?: string;
+  isArray?: boolean;
 };
 // Column definition with proper typing
 export interface ColumnDefinition<T = unknown> {

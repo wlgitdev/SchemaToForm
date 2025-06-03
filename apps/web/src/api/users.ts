@@ -16,6 +16,7 @@ export class UsersApi {
         createdAt: new Date("2024-01-01"),
         tags: ["frontend", "react", "typescript"],
         department: 1,
+        skills: [1, 2],
       },
       {
         id: 2,
@@ -24,7 +25,8 @@ export class UsersApi {
         isActive: false,
         createdAt: new Date(),
         department: 2,
-        tags: ["SEO", "content", "branding"],
+        tags: ["backend", "node.js", "databases"],
+        skills: [3, 4],
       },
       {
         id: 3,
@@ -34,6 +36,7 @@ export class UsersApi {
         createdAt: new Date(),
         department: 1,
         tags: ["backend", "node.js", "databases"],
+        skills: [5, 6],
       },
       {
         id: 4,
