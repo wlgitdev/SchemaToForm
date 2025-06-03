@@ -3,6 +3,7 @@ export * from "./components/DynamicForm";
 export * from "./components/FormContext";
 export * from "./components/FormFields";
 export * from "./components/FormLayout";
+export * from "./hooks/useFormReferenceResolver";
 
 // Contexts
 export * from "./contexts/FormThemeContext";

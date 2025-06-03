@@ -1,4 +1,4 @@
-import { ListSchema } from "@schematoform/schema-to-ui";
+import { ListSchema, UISchema } from "@schematoform/schema-to-ui";
 import { UserList } from "../types";
 
 export const userSchema: ListSchema<UserList> = {
@@ -203,5 +203,85 @@ export const userSchema: ListSchema<UserList> = {
         disabled: (selectedRows) => !selectedRows.every((row) => !row.isActive),
       },
     ],
+  },
+};
+
+export const userFormSchema: UISchema = {
+  fields: {
+    name: {
+      type: "text",
+      label: "Full Name",
+      placeholder: "Enter full name",
+      validation: {
+        required: true,
+        message: "Name is required",
+      },
+    },
+    age: {
+      type: "number",
+      label: "Age",
+      placeholder: "Enter age",
+      validation: {
+        required: true,
+        message: "Age is required",
+      },
+    },
+    isActive: {
+      type: "checkbox",
+      label: "Active Status",
+      defaultValue: true,
+    },
+    department: {
+      type: "select",
+      label: "Department",
+      placeholder: "Select department",
+      reference: {
+        modelName: "departments",
+        displayField: "name",
+        multiple: false,
+      },
+      validation: {
+        required: true,
+        message: "Department is required",
+      },
+    },
+    skills: {
+      type: "multiselect",
+      label: "Skills",
+      placeholder: "Select skills",
+      reference: {
+        modelName: "skills",
+        displayField: "name",
+        multiple: true,
+      },
+    },
+    tags: {
+      type: "multiselect",
+      label: "Tags",
+      options: [{ value: "test1", label: "test value 1" }],
+    },
+  },
+  layout: {
+    groups: [
+      {
+        name: "personal",
+        label: "Personal Information",
+        fields: ["name", "age"],
+        collapsible: false,
+      },
+      {
+        name: "work",
+        label: "Work Information",
+        fields: ["department", "skills", "isActive"],
+        collapsible: true,
+      },
+      {
+        name: "metadata",
+        label: "Additional Information",
+        fields: ["tags"],
+        collapsible: true,
+      },
+    ],
+    order: ["name", "age", "department", "skills", "isActive", "tags"],
   },
 };

@@ -234,6 +234,10 @@ export class MongooseSchemaAdapter extends BaseSchemaAdapter<Schema> {
     const reference = this.processReference(schemaType);
     if (reference) {
       baseField.reference = reference;
+      // Add placeholder for reference fields
+      baseField.placeholder = `Select ${
+        reference.multiple ? "one or more" : "a"
+      } ${reference.modelName.toLowerCase()}...`;
     }
 
     // Handle enums
@@ -243,6 +247,30 @@ export class MongooseSchemaAdapter extends BaseSchemaAdapter<Schema> {
       baseField.options = this.processEnumOptions(enumValues);
       baseField.type =
         schemaType.instance === "Array" ? "multiselect" : "select";
+      // Add placeholder for enum fields
+      if (!baseField.placeholder) {
+        baseField.placeholder = `Select ${
+          baseField.type === "multiselect" ? "options" : "an option"
+        }...`;
+      }
+    }
+
+    // Add default placeholders for other field types
+    if (!baseField.placeholder) {
+      switch (baseField.type) {
+        case "text":
+          baseField.placeholder = `Enter ${baseField.label.toLowerCase()}...`;
+          break;
+        case "number":
+          baseField.placeholder = `Enter a number...`;
+          break;
+        case "date":
+          baseField.placeholder = `Select a date...`;
+          break;
+        case "list":
+          baseField.placeholder = `Add items...`;
+          break;
+      }
     }
 
     return baseField;
@@ -267,7 +295,7 @@ export class MongooseSchemaAdapter extends BaseSchemaAdapter<Schema> {
 
     if (reference) {
       baseColumn.reference = {
-        queryKey: [`${reference.modelName.toLowerCase()}-list`],
+        queryKey: [`${reference.modelName.toLowerCase()}`],
         collection: reference.modelName,
         valueField: "_id",
         labelField: reference.displayField,

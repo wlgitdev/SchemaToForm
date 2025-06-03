@@ -1,4 +1,5 @@
 import React, { JSX } from "react";
+import { QueryClient } from "@tanstack/react-query";
 import {
   FormProvider,
   useForm,
@@ -17,6 +18,7 @@ import {
   useFormTheme,
   DependencyHandler,
   ThemeProvider,
+  useFormReferenceResolver,
 } from "../..";
 import ValidationSummary from "./ValidationSummary";
 
@@ -83,21 +85,23 @@ const FieldRenderer: React.FC<{
   }
 };
 
-
-
 const FormFields: React.FC<{
   schema: UISchema;
   disabled?: boolean;
-}> = ({ schema, disabled }) => {
+  queryClient?: QueryClient;
+}> = ({ schema, disabled, queryClient }) => {
   const { state } = useForm();
   const [effectsCache, setEffectsCache] = React.useState<
     Map<string, FieldEffect>
   >(new Map());
 
-  // Initialize dependency handler
+  // Resolve reference field options using cached query data
+  const resolvedSchema = useFormReferenceResolver(schema, queryClient);
+
+  // Initialize dependency handler with resolved schema
   const dependencyHandler = React.useMemo(
-    () => new DependencyHandler(schema.fields),
-    [schema]
+    () => new DependencyHandler(resolvedSchema.fields),
+    [resolvedSchema]
   );
 
   // Evaluate all field dependencies and cache the results
@@ -105,7 +109,7 @@ const FormFields: React.FC<{
     const newEffects = new Map<string, FieldEffect>();
 
     // Evaluate dependencies for all fields
-    Object.keys(schema.fields).forEach((fieldName) => {
+    Object.keys(resolvedSchema.fields).forEach((fieldName) => {
       const fieldEffects = dependencyHandler.evaluateDependencies(
         fieldName,
         state.values
@@ -116,11 +120,11 @@ const FormFields: React.FC<{
     });
 
     setEffectsCache(newEffects);
-  }, [schema, state.values, dependencyHandler]);
+  }, [resolvedSchema, state.values, dependencyHandler]);
 
   const renderFields = (fields: string[]) => {
     return fields.map((fieldName) => {
-      const field = schema.fields[fieldName];
+      const field = resolvedSchema.fields[fieldName];
       if (!field) return null;
 
       // Get any effects that apply to this field
@@ -161,10 +165,10 @@ const FormFields: React.FC<{
   };
 
   // If there are groups defined in the layout
-  if (schema.layout?.groups) {
+  if (resolvedSchema.layout?.groups) {
     return (
       <>
-        {schema.layout.groups.map((group, index) => (
+        {resolvedSchema.layout.groups.map((group, index) => (
           <FormSection
             key={group.name || index}
             title={group.label}
@@ -180,7 +184,9 @@ const FormFields: React.FC<{
 
   // If no groups are defined, use a single responsive grid
   return (
-    <GridContainer>{renderFields(Object.keys(schema.fields))}</GridContainer>
+    <GridContainer>
+      {renderFields(Object.keys(resolvedSchema.fields))}
+    </GridContainer>
   );
 };
 
@@ -191,6 +197,7 @@ interface FormContentProps {
   className?: string;
   onSubmit?: (values: FormData) => Promise<void>;
   validateBeforeSubmit?: boolean;
+  queryClient?: QueryClient;
 }
 
 const FormContent: React.FC<FormContentProps> = ({
@@ -200,6 +207,7 @@ const FormContent: React.FC<FormContentProps> = ({
   className,
   onSubmit,
   validateBeforeSubmit = true,
+  queryClient,
 }) => {
   const [submitAttempted, setSubmitAttempted] = React.useState(false);
   const {
@@ -226,7 +234,11 @@ const FormContent: React.FC<FormContentProps> = ({
       noValidate
     >
       <div className={theme.form?.fieldsContainer || ""}>
-        <FormFields schema={schema} disabled={formDisabled} />
+        <FormFields
+          schema={schema}
+          disabled={formDisabled}
+          queryClient={queryClient}
+        />
       </div>
 
       <div className={theme.form?.submitContainer || ""}>
@@ -249,8 +261,6 @@ const FormContent: React.FC<FormContentProps> = ({
   );
 };
 
-
-
 interface DynamicFormProps {
   schema: UISchema;
   initialValues?: FormData;
@@ -260,6 +270,7 @@ interface DynamicFormProps {
   className?: string;
   theme?: Partial<FormTheme>;
   validateBeforeSubmit?: boolean;
+  queryClient?: QueryClient;
 }
 
 export const DynamicForm = ({
@@ -271,6 +282,7 @@ export const DynamicForm = ({
   className = "",
   theme,
   validateBeforeSubmit = true,
+  queryClient,
 }: DynamicFormProps): JSX.Element => {
   return (
     <ThemeProvider theme={theme}>
@@ -287,6 +299,7 @@ export const DynamicForm = ({
           className={className}
           onSubmit={onSubmit}
           validateBeforeSubmit={validateBeforeSubmit}
+          queryClient={queryClient}
         />
       </FormProvider>
     </ThemeProvider>
